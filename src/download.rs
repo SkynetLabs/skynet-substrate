@@ -49,7 +49,7 @@ impl Default for DownloadOptions<'_> {
     }
 }
 
-pub fn get_file_content(skylink: &str, opts: &DownloadOptions) -> Result<Vec<u8>, DownloadError> {
+pub fn download_bytes(skylink: &str, opts: &DownloadOptions) -> Result<Vec<u8>, DownloadError> {
     // TODO: Implement full skylink parsing.
     let skylink = if let Some(stripped) = skylink.strip_prefix(URI_SKYNET_PREFIX) {
         stripped
@@ -60,7 +60,7 @@ pub fn get_file_content(skylink: &str, opts: &DownloadOptions) -> Result<Vec<u8>
     let url = make_url(&[opts.portal_url, opts.endpoint_download, skylink]);
 
     if_std! {
-        println!("{:?}", opts.portal_url);
+        println!("{:?}", str::from_utf8(&url)?);
     }
 
     // Initiate an external HTTP GET request. This is using high-level wrappers from `sp_runtime`.
@@ -93,15 +93,15 @@ pub fn get_file_content(skylink: &str, opts: &DownloadOptions) -> Result<Vec<u8>
 
 #[cfg(test)]
 mod tests {
-    use super::{get_file_content, DownloadOptions};
+    use super::{download_bytes, DownloadOptions};
     use sp_std::if_std;
 
     const ENTRY_LINK: &str = "AQAZ1R-KcL4NO_xIVf0q8B1ngPVd6ec-Pu54O0Cto387Nw";
     const EXPECTED_JSON: &str = "{ message: \"hi there!\" }";
 
     #[test]
-    fn get_file_content_entry_link() {
-        let data = get_file_content(ENTRY_LINK, &Default::default());
+    fn download_bytes_entry_link() {
+        let data = download_bytes(ENTRY_LINK, &Default::default());
         if_std! {
             println!("{:?}", data);
         }
@@ -110,10 +110,10 @@ mod tests {
     }
 
     #[test]
-    fn get_file_content_custom_portal_url() {
+    fn download_bytes_custom_portal_url() {
         const CUSTOM_PORTAL_URL: &str = "asdf";
 
-        let _ = get_file_content(
+        let _ = download_bytes(
             ENTRY_LINK,
             &DownloadOptions {
                 portal_url: CUSTOM_PORTAL_URL,
