@@ -11,5 +11,6 @@ mod upload;
 mod util;
 
 pub use download::{DownloadError, download_bytes};
-// pub use pin::{PinError, pin_skylink};
+pub use pin::{PinError, pin_skylink};
 pub use upload::{UploadError, upload_bytes};
+pub use util::{RequestError};

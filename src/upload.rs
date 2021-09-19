@@ -144,6 +144,7 @@ pub fn upload_bytes(
     }
 
     // Next we fully read the response body and collect it to a vector of bytes.
+    // TODO: Return skylink.
     let body = response.body().collect::<Vec<u8>>();
     Ok(body)
 
