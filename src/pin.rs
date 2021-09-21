@@ -53,7 +53,9 @@ pub fn pin_skylink(skylink: &str, opts: &PinOptions) -> Result<Vec<u8>, PinError
     let mut response = execute_request(str::from_utf8(&url)?)?;
 
     let headers = response.headers();
-    let skylink = headers.find("skynet-skylink");
+    let skylink = headers
+        .find("skynet-skylink")
+        .or(headers.find("Skynet-Skylink"));
 
     if let Some(skylink) = skylink {
         Ok(str_to_bytes(skylink))
@@ -67,46 +69,64 @@ pub fn pin_skylink(skylink: &str, opts: &PinOptions) -> Result<Vec<u8>, PinError
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sp_core::offchain::{testing, OffchainWorkerExt};
-    use sp_runtime::offchain::{self as rt_offchain, http};
-    use sp_io::TestExternalities;
 
-    // TODO: Update test.
+    use sp_core::offchain::{testing, OffchainExt};
+    use sp_io::TestExternalities;
+    use sp_runtime::offchain::{self as rt_offchain, http};
+
+    const DATA_LINK: &str = "MABdWWku6YETM2zooGCjQi26Rs4a6Hb74q26i-vMMcximQ";
+    const ENTRY_LINK: &str = "AQAZ1R-KcL4NO_xIVf0q8B1ngPVd6ec-Pu54O0Cto387Nw";
+
     #[test]
-    fn should_send_a_basic_request_and_get_response() {
+    fn should_pin_data_link() {
         let (offchain, state) = testing::TestOffchainExt::new();
         let mut t = TestExternalities::default();
-        t.register_extension(OffchainWorkerExt::new(offchain));
+        t.register_extension(OffchainExt::new(offchain));
+
+        // Add expected request.
+        state.write().expect_request(testing::PendingRequest {
+            method: "GET".into(),
+            uri: "https://siasky.net/skynet/pin/MABdWWku6YETM2zooGCjQi26Rs4a6Hb74q26i-vMMcximQ"
+                .into(),
+            response: Some(br#""#.to_vec()),
+            response_headers: vec![("Skynet-Skylink".to_owned(), DATA_LINK.to_owned())],
+            sent: true,
+            ..Default::default()
+        });
 
         t.execute_with(|| {
-            let request = http::Request::get("http://localhost:1234");
-            let pending = request.add_header("X-Auth", "hunter2").send().unwrap();
-            // make sure it's sent correctly
-            state.write().fulfill_pending_request(
-                0,
-                testing::PendingRequest {
-                    method: "GET".into(),
-                    uri: "http://localhost:1234".into(),
-                    headers: vec![("X-Auth".into(), "hunter2".into())],
-                    sent: true,
-                    ..Default::default()
-                },
-                b"1234".to_vec(),
-                None,
-            );
+            // Call pin_skylink.
+            let skylink_returned = pin_skylink(DATA_LINK, &Default::default()).unwrap();
 
-            // wait
-            let mut response = pending.wait().unwrap();
-
-            // then check the response
-            let mut headers = response.headers().into_iter();
-            assert_eq!(headers.current(), None);
-            assert_eq!(headers.next(), false);
-            assert_eq!(headers.current(), None);
-
-            let body = response.body();
-            assert_eq!(body.clone().collect::<Vec<_>>(), b"1234".to_vec());
-            assert_eq!(body.error(), &None);
+            // Check the response.
+            assert_eq!(skylink_returned, str_to_bytes(DATA_LINK));
         })
     }
+
+    // // TODO: Update test.
+    // #[test]
+    // fn should_fail_to_pin_entry_link() {
+    //     let (offchain, state) = testing::TestOffchainExt::new();
+    //     let mut t = TestExternalities::default();
+    //     t.register_extension(OffchainExt::new(offchain));
+
+    //     t.execute_with(|| {
+    //         // Call pin_skylink.
+    //         let skylink_returned = pin_skylink(ENTRY_LINK, &Default::default()).unwrap();
+
+    //         // Fulfill the request.
+    //         state.write().fulfill_pending_request(
+    //             0,
+    //             testing::PendingRequest {
+    //                 method: "GET".into(),
+    //                 uri: "http://localhost:1234".into(),
+    //                 headers: vec![("X-Auth".into(), "hunter2".into())],
+    //                 sent: true,
+    //                 ..Default::default()
+    //             },
+    //             b"1234".to_vec(),
+    //             None,
+    //         );
+    //     })
+    // }
 }
