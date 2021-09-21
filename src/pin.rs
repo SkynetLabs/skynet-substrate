@@ -40,7 +40,10 @@ impl Default for PinOptions<'_> {
     }
 }
 
-pub fn pin_skylink(skylink: &str, opts: &PinOptions) -> Result<Vec<u8>, PinError> {
+pub fn pin_skylink(skylink: &str, opts: Option<&PinOptions>) -> Result<Vec<u8>, PinError> {
+    let default = Default::default();
+    let opts = opts.unwrap_or(&default);
+
     // TODO: Implement full skylink parsing.
     let skylink = if let Some(stripped) = skylink.strip_prefix(URI_SKYNET_PREFIX) {
         stripped
@@ -96,7 +99,7 @@ mod tests {
 
         t.execute_with(|| {
             // Call pin_skylink.
-            let skylink_returned = pin_skylink(DATA_LINK, &Default::default()).unwrap();
+            let skylink_returned = pin_skylink(DATA_LINK, None).unwrap();
 
             // Check the response.
             assert_eq!(skylink_returned, str_to_bytes(DATA_LINK));
@@ -110,23 +113,20 @@ mod tests {
     //     let mut t = TestExternalities::default();
     //     t.register_extension(OffchainExt::new(offchain));
 
+    //     // Add expected request.
+    //     state.write().expect_request(testing::PendingRequest {
+    //         method: "GET".into(),
+    //         uri: "https://siasky.net/skynet/pin/MABdWWku6YETM2zooGCjQi26Rs4a6Hb74q26i-vMMcximQ"
+    //             .into(),
+    //         response: Some(br#""#.to_vec()),
+    //         response_headers: vec![("Skynet-Skylink".to_owned(), DATA_LINK.to_owned())],
+    //         sent: true,
+    //         ..Default::default()
+    //     });
+
     //     t.execute_with(|| {
     //         // Call pin_skylink.
     //         let skylink_returned = pin_skylink(ENTRY_LINK, &Default::default()).unwrap();
-
-    //         // Fulfill the request.
-    //         state.write().fulfill_pending_request(
-    //             0,
-    //             testing::PendingRequest {
-    //                 method: "GET".into(),
-    //                 uri: "http://localhost:1234".into(),
-    //                 headers: vec![("X-Auth".into(), "hunter2".into())],
-    //                 sent: true,
-    //                 ..Default::default()
-    //             },
-    //             b"1234".to_vec(),
-    //             None,
-    //         );
     //     })
     // }
 }

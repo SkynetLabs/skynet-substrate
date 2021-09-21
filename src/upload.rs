@@ -54,8 +54,11 @@ impl Default for UploadOptions<'_> {
 pub fn upload_bytes(
     bytes: &str,
     filename: &str,
-    opts: &UploadOptions,
+    opts: Option<&UploadOptions>,
 ) -> Result<Vec<u8>, UploadError> {
+    let default = &Default::default();
+    let opts = opts.unwrap_or(&default);
+
     // Construct the URL.
     let url = make_url(&[opts.portal_url, opts.endpoint_upload]);
 

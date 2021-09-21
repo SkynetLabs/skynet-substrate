@@ -87,7 +87,7 @@ pub fn make_url(strs: &[&str]) -> Vec<u8> {
     let mut url_bytes = Vec::with_capacity(len);
 
     let mut i = 0;
-    for mut s in strs {
+    for s in strs {
         // Remove any slashes from the beginning.
         let mut j = 0;
         while s[j..].starts_with('/') {

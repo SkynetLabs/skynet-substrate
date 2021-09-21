@@ -1,6 +1,6 @@
 //! Download functions.
 
-use crate::util::{execute_request, make_url, DEFAULT_PORTAL_URL, RequestError, URI_SKYNET_PREFIX};
+use crate::util::{execute_request, make_url, RequestError, DEFAULT_PORTAL_URL, URI_SKYNET_PREFIX};
 
 use sp_std::{prelude::Vec, str};
 
@@ -37,7 +37,13 @@ impl Default for DownloadOptions<'_> {
     }
 }
 
-pub fn download_bytes(skylink: &str, opts: &DownloadOptions) -> Result<Vec<u8>, DownloadError> {
+pub fn download_bytes(
+    skylink: &str,
+    opts: Option<&DownloadOptions>,
+) -> Result<Vec<u8>, DownloadError> {
+    let default = Default::default();
+    let opts = opts.unwrap_or(&default);
+
     // TODO: Implement full skylink parsing.
     let skylink = if let Some(stripped) = skylink.strip_prefix(URI_SKYNET_PREFIX) {
         stripped
@@ -54,34 +60,71 @@ pub fn download_bytes(skylink: &str, opts: &DownloadOptions) -> Result<Vec<u8>, 
 
 #[cfg(test)]
 mod tests {
-    use super::{download_bytes, DownloadOptions};
-    use sp_std::if_std;
+    use super::*;
+    use crate::util::str_to_bytes;
 
-    const ENTRY_LINK: &str = "AQAZ1R-KcL4NO_xIVf0q8B1ngPVd6ec-Pu54O0Cto387Nw";
+    use sp_core::offchain::{testing, OffchainExt};
+    use sp_io::TestExternalities;
+    use sp_runtime::offchain::{self as rt_offchain, http};
+
+    const DATA_LINK: &str = "MABdWWku6YETM2zooGCjQi26Rs4a6Hb74q26i-vMMcximQ";
     const EXPECTED_JSON: &str = "{ message: \"hi there!\" }";
 
     #[test]
-    fn download_bytes_entry_link() {
-        let data = download_bytes(ENTRY_LINK, &Default::default());
-        if_std! {
-            println!("{:?}", data);
-        }
+    fn should_download_from_data_link() {
+        let (offchain, state) = testing::TestOffchainExt::new();
+        let mut t = TestExternalities::default();
+        t.register_extension(OffchainExt::new(offchain));
 
-        // TODO: Check the used portal url.
+        // Add expected request.
+        state.write().expect_request(testing::PendingRequest {
+            method: "GET".into(),
+            uri: "https://siasky.net/MABdWWku6YETM2zooGCjQi26Rs4a6Hb74q26i-vMMcximQ".into(),
+            response: Some(str_to_bytes(EXPECTED_JSON)),
+            response_headers: vec![("Skynet-Skylink".to_owned(), DATA_LINK.to_owned())],
+            sent: true,
+            ..Default::default()
+        });
+
+        t.execute_with(|| {
+            // Download
+            let data_returned = download_bytes(DATA_LINK, None).unwrap();
+
+            // Check the response.
+            assert_eq!(data_returned, str_to_bytes(EXPECTED_JSON));
+        })
     }
 
     #[test]
-    fn download_bytes_custom_portal_url() {
-        const CUSTOM_PORTAL_URL: &str = "asdf";
+    fn should_download_with_custom_portal_url() {
+        const CUSTOM_PORTAL_URL: &str = "https://siasky.dev";
 
-        let _ = download_bytes(
-            ENTRY_LINK,
-            &DownloadOptions {
-                portal_url: CUSTOM_PORTAL_URL,
-                ..Default::default()
-            },
-        );
+        let (offchain, state) = testing::TestOffchainExt::new();
+        let mut t = TestExternalities::default();
+        t.register_extension(OffchainExt::new(offchain));
 
-        // TODO: Check the used portal url.
+        // Add expected request.
+        state.write().expect_request(testing::PendingRequest {
+            method: "GET".into(),
+            uri: "https://siasky.dev/MABdWWku6YETM2zooGCjQi26Rs4a6Hb74q26i-vMMcximQ".into(),
+            response: Some(str_to_bytes(EXPECTED_JSON)),
+            response_headers: vec![("Skynet-Skylink".to_owned(), DATA_LINK.to_owned())],
+            sent: true,
+            ..Default::default()
+        });
+
+        t.execute_with(|| {
+            // Download
+            let data_returned = download_bytes(
+                DATA_LINK,
+                Some(&DownloadOptions {
+                    portal_url: CUSTOM_PORTAL_URL,
+                    ..Default::default()
+                }),
+            ).unwrap();
+
+            // Check the response.
+            assert_eq!(data_returned, str_to_bytes(EXPECTED_JSON));
+        })
     }
 }
