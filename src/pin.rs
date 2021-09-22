@@ -75,10 +75,9 @@ mod tests {
 
     use sp_core::offchain::{testing, OffchainExt};
     use sp_io::TestExternalities;
-    use sp_runtime::offchain::{self as rt_offchain, http};
 
     const DATA_LINK: &str = "MABdWWku6YETM2zooGCjQi26Rs4a6Hb74q26i-vMMcximQ";
-    const ENTRY_LINK: &str = "AQAZ1R-KcL4NO_xIVf0q8B1ngPVd6ec-Pu54O0Cto387Nw";
+    // const ENTRY_LINK: &str = "AQAZ1R-KcL4NO_xIVf0q8B1ngPVd6ec-Pu54O0Cto387Nw";
 
     #[test]
     fn should_pin_data_link() {

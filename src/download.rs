@@ -65,7 +65,6 @@ mod tests {
 
     use sp_core::offchain::{testing, OffchainExt};
     use sp_io::TestExternalities;
-    use sp_runtime::offchain::{self as rt_offchain, http};
 
     const DATA_LINK: &str = "MABdWWku6YETM2zooGCjQi26Rs4a6Hb74q26i-vMMcximQ";
     const EXPECTED_JSON: &str = "{ message: \"hi there!\" }";

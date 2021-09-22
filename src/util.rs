@@ -29,6 +29,21 @@ impl From<rt_offchain::HttpError> for RequestError {
     }
 }
 
+pub fn concat_bytes(byte_vecs: &[Vec<u8>]) -> Vec<u8> {
+    let mut len = 0;
+    for v in byte_vecs {
+        len += v.len();
+    }
+    let mut final_bytes = Vec::with_capacity(len);
+
+    for v in byte_vecs {
+        let mut v2 = v.clone();
+        final_bytes.append(&mut v2);
+    }
+
+    final_bytes
+}
+
 pub fn concat_strs(strs: &[&str]) -> Vec<u8> {
     let mut len = 0;
     for s in strs {
