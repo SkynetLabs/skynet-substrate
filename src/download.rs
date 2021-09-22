@@ -120,7 +120,8 @@ mod tests {
                     portal_url: CUSTOM_PORTAL_URL,
                     ..Default::default()
                 }),
-            ).unwrap();
+            )
+            .unwrap();
 
             // Check the response.
             assert_eq!(data_returned, str_to_bytes(EXPECTED_JSON));
