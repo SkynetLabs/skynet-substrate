@@ -68,7 +68,9 @@ struct UploadResponse {
     #[serde(deserialize_with = "de_string_to_bytes")]
     skylink: Vec<u8>,
     #[serde(deserialize_with = "de_string_to_bytes")]
+    #[allow(dead_code)]
     merkleroot: Vec<u8>,
+    #[allow(dead_code)]
     bitfield: u16,
 }
 
@@ -78,7 +80,7 @@ pub fn upload_bytes(
     opts: Option<&UploadOptions>,
 ) -> Result<Vec<u8>, UploadError> {
     let default = &Default::default();
-    let opts = opts.unwrap_or(&default);
+    let opts = opts.unwrap_or(default);
 
     // Construct the URL.
     let url = make_url(&[opts.portal_url, opts.endpoint_upload]);
@@ -171,7 +173,7 @@ pub fn upload_bytes(
     // Convert the bytes to a str.
     let resp_str = str::from_utf8(&resp_bytes)?;
     // Parse the str as JSON and store it in UploadResponse.
-    let upload_response: UploadResponse = serde_json::from_str(&resp_str)?;
+    let upload_response: UploadResponse = serde_json::from_str(resp_str)?;
     Ok(concat_bytes(&[
         str_to_bytes(URI_SKYNET_PREFIX),
         upload_response.skylink,

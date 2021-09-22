@@ -58,7 +58,7 @@ pub fn pin_skylink(skylink: &str, opts: Option<&PinOptions>) -> Result<Vec<u8>, 
     let headers = response.headers();
     let skylink = headers
         .find("skynet-skylink")
-        .or(headers.find("Skynet-Skylink"));
+        .or_else(|| headers.find("Skynet-Skylink"));
 
     if let Some(skylink) = skylink {
         Ok(str_to_bytes(skylink))

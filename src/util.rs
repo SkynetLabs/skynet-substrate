@@ -95,7 +95,7 @@ pub fn make_url(strs: &[&str]) -> Vec<u8> {
         len += s.len();
 
         // Add 1 for every slash that will be added to the URL later.
-        if !s.ends_with("/") {
+        if !s.ends_with('/') {
             len += 1;
         }
     }
