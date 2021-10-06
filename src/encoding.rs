@@ -1,6 +1,29 @@
+use crate::crypto::{Signature, SIGNATURE_LENGTH};
+use crate::util::str_to_bytes;
+
 use bytes::{BufMut, BytesMut};
 
-// fn decode_hex_bytes_to_bytes(hex_bytes: &[u8]) -> Vec<u8> {}
+pub fn decode_hex_to_bytes(hex: &str) -> Vec<u8> {
+    decode_hex_bytes_to_bytes(&str_to_bytes(&hex))
+}
+
+pub fn decode_hex_bytes_to_bytes(hex_bytes: &[u8]) -> Vec<u8> {
+    if hex_bytes.len() % 2 != 0 {
+        panic!("Expected an even number of hex bytes");
+    }
+
+    let mut decoded = Vec::with_capacity(hex_bytes.len() / 2);
+    for bytes in hex_bytes.chunks(2) {
+        match bytes {
+            [byte1, byte2] => {
+                let byte = (hex_byte_to_u4(*byte1) << 4) | hex_byte_to_u4(*byte2);
+                decoded.push(byte);
+            }
+            _ => panic!("Should not hit this branch"),
+        }
+    }
+    decoded
+}
 
 pub fn encode_bytes_to_hex_bytes(bytes: &[u8]) -> Vec<u8> {
     let mut encoded = Vec::with_capacity(bytes.len() * 2);
@@ -11,9 +34,21 @@ pub fn encode_bytes_to_hex_bytes(bytes: &[u8]) -> Vec<u8> {
     encoded
 }
 
+fn hex_byte_to_u4(hex_byte: u8) -> u8 {
+    match hex_byte {
+        // 0-9
+        n @ 48..=57 => n - 48,
+        // a-f
+        n @ 97..=102 => n - 97 + 10,
+        _ => panic!("Unexpected hex_byte input"),
+    }
+}
+
 fn u4_to_hex_byte(u4: u8) -> u8 {
     match u4 {
+        // 0-9
         n @ 0..=9 => 48 + n,
+        // a-f
         n @ 10..=15 => 97 + n - 10,
         _ => panic!("Unexpected u4 input"),
     }
@@ -43,10 +78,36 @@ pub fn encode_str(s: &str) -> Vec<u8> {
     encoded.to_vec()
 }
 
+pub fn vec_to_signature(v: Vec<u8>) -> Signature {
+    if v.len() != SIGNATURE_LENGTH {
+        panic!("Input v is of the wrong signature length");
+    }
+
+    let mut signature = [0; SIGNATURE_LENGTH];
+    let mut i = 0;
+    for byte in v {
+        signature[i] = byte;
+        i += 1;
+    }
+    signature
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::util::str_to_bytes;
+
+    #[test]
+    fn should_decode_hex() {
+        let s = decode_hex_to_bytes("ff");
+        assert_eq!(s, vec![255]);
+
+        let s = decode_hex_to_bytes("0a");
+        assert_eq!(s, vec![10]);
+
+        let s = decode_hex_to_bytes("ff0a");
+        assert_eq!(s, vec![255, 10]);
+    }
 
     #[test]
     fn should_encode_hex() {
