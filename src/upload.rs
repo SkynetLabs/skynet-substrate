@@ -1,7 +1,7 @@
 //! Upload functions.
 
 use crate::util::{
-    concat_bytes, concat_strs, make_url, str_to_bytes, DEFAULT_PORTAL_URL, URI_SKYNET_PREFIX,
+    de_string_to_bytes, concat_bytes, concat_strs, make_url, str_to_bytes, DEFAULT_PORTAL_URL, URI_SKYNET_PREFIX,
 };
 
 use frame_support::debug;
@@ -175,17 +175,9 @@ pub fn upload_bytes(
     // Parse the str as JSON and store it in UploadResponse.
     let upload_response: UploadResponse = serde_json::from_str(resp_str)?;
     Ok(concat_bytes(&[
-        str_to_bytes(URI_SKYNET_PREFIX),
-        upload_response.skylink,
+        &str_to_bytes(URI_SKYNET_PREFIX),
+        &upload_response.skylink,
     ]))
-}
-
-fn de_string_to_bytes<'de, D>(de: D) -> Result<Vec<u8>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s: &str = Deserialize::deserialize(de)?;
-    Ok(s.as_bytes().to_vec())
 }
 
 #[cfg(test)]

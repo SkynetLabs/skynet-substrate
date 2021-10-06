@@ -4,7 +4,7 @@ use crate::util::str_to_bytes;
 use bytes::{BufMut, BytesMut};
 
 pub fn decode_hex_to_bytes(hex: &str) -> Vec<u8> {
-    decode_hex_bytes_to_bytes(&str_to_bytes(&hex))
+    decode_hex_bytes_to_bytes(&str_to_bytes(hex))
 }
 
 pub fn decode_hex_bytes_to_bytes(hex_bytes: &[u8]) -> Vec<u8> {
@@ -54,7 +54,7 @@ fn u4_to_hex_byte(u4: u8) -> u8 {
     }
 }
 
-fn encode_number(mut num: usize) -> [u8; 8] {
+pub fn encode_number(mut num: u64) -> [u8; 8] {
     let mut encoded: [u8; 8] = [0; 8];
     for index in 0..encoded.len() {
         let byte = num & 0xff;
@@ -64,17 +64,29 @@ fn encode_number(mut num: usize) -> [u8; 8] {
     encoded
 }
 
+pub fn encode_prefixed_bytes(bytes: &[u8]) -> Vec<u8> {
+    let len = bytes.len();
+    let mut encoded = BytesMut::with_capacity(8 + len);
+
+    encoded.put_u64_le(len as u64);
+    encoded.put(bytes.as_ref());
+
+    encoded.to_vec()
+}
+
 pub fn encode_str(s: &str) -> Vec<u8> {
     let bytes = s.as_bytes();
 
     let mut encoded = BytesMut::with_capacity(8 + bytes.len());
-    let encoded_len = encode_number(bytes.len());
+    let encoded_len = encode_number(bytes.len() as u64);
+
     encoded.put(encoded_len.as_ref());
     // Skip to position 8.
     for _ in 0..(8 - encoded_len.len()) {
         encoded.put_u8(0);
     }
     encoded.put(bytes);
+
     encoded.to_vec()
 }
 

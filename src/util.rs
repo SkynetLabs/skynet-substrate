@@ -1,6 +1,7 @@
 //! Utility functions.
 
 use frame_support::debug;
+use serde::{Deserialize, Deserializer};
 use sp_io::offchain;
 use sp_runtime::offchain::{self as rt_offchain, http};
 use sp_std::str;
@@ -29,16 +30,16 @@ impl From<rt_offchain::HttpError> for RequestError {
     }
 }
 
-pub fn concat_bytes(byte_vecs: &[Vec<u8>]) -> Vec<u8> {
+pub fn concat_bytes(byte_slices: &[&[u8]]) -> Vec<u8> {
     let mut len = 0;
-    for v in byte_vecs {
-        len += v.len();
+    for bytes in byte_slices {
+        len += bytes.len();
     }
     let mut final_bytes = Vec::with_capacity(len);
 
-    for v in byte_vecs {
-        let mut v2 = v.clone();
-        final_bytes.append(&mut v2);
+    for bytes in byte_slices {
+        let mut v = bytes.to_vec();
+        final_bytes.append(&mut v);
     }
 
     final_bytes
@@ -132,6 +133,14 @@ pub fn make_url(strs: &[&str]) -> Vec<u8> {
 
 pub fn str_to_bytes(s: &str) -> Vec<u8> {
     s.as_bytes().to_vec()
+}
+
+pub fn de_string_to_bytes<'de, D>(de: D) -> Result<Vec<u8>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: &str = Deserialize::deserialize(de)?;
+    Ok(s.as_bytes().to_vec())
 }
 
 #[cfg(test)]
