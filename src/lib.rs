@@ -7,6 +7,7 @@
 
 mod crypto;
 mod download;
+mod encoding;
 mod pin;
 mod registry;
 mod upload;
@@ -16,7 +17,8 @@ pub use crypto::{Signature, HASH_LENGTH, PUBLIC_KEY_LENGTH, PRIVATE_KEY_LENGTH, 
 pub use download::{download_bytes, DownloadError, DownloadOptions};
 pub use pin::{pin_skylink, PinError};
 pub use registry::{
-    get_entry, set_entry, GetEntryError, GetEntryOptions, RegistryEntry, SetEntryError,
+    // get_entry, set_entry,
+    GetEntryError, GetEntryOptions, RegistryEntry, SetEntryError,
     SetEntryOptions, SignedRegistryEntry,
 };
 pub use upload::{upload_bytes, UploadError, UploadOptions};

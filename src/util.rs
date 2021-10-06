@@ -88,7 +88,6 @@ pub fn execute_request(url: &str) -> Result<http::Response, RequestError> {
     }
 }
 
-// TODO: Make sure arguments are separated by "/".
 pub fn make_url(strs: &[&str]) -> Vec<u8> {
     let mut len = 0;
     for s in strs {

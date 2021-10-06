@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
+bytes = { version = "1.1", default-features = false }
 ed25519-dalek = { version = '1.0', default-features = false, features = [
 	"u64_backend",
 	"alloc",
@@ -11,16 +12,15 @@ ed25519-dalek = { version = '1.0', default-features = false, features = [
 frame-support = { version = '3.0', default-features = false }
 serde = { version = '1.0', default-features = false, features = ['derive'] }
 serde_json = { version = '1.0', default-features = false, features = ['alloc'] }
+sp-core = { version = '3.0', default-features = false }
 sp-io = { version = '3.0', default-features = false }
 sp-runtime = { version = '3.0', default-features = false }
 sp-std = { version = '3.0', default-features = false }
 
-[dev-dependencies]
-sp-core = { version = '3.0', default-features = false }
-
 [features]
 default = ['std']
 std = [
+    'bytes/std',
     'ed25519-dalek/std',
 	'frame-support/std',
     'sp-core/std',
