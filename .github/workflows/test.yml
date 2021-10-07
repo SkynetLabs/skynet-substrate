@@ -25,6 +25,7 @@ jobs:
         with:
           command: install
           args: cargo-tarpaulin
-      - uses: actions-rs/cargo@v1
+      - name: Coverage Report
+        uses: actions-rs/cargo@v1
         with:
           command: tarpaulin

@@ -1,10 +1,11 @@
 //! Upload functions.
 
 use crate::util::{
-    de_string_to_bytes, concat_bytes, concat_strs, make_url, str_to_bytes, DEFAULT_PORTAL_URL, URI_SKYNET_PREFIX
+    concat_bytes, concat_strs, de_string_to_bytes, make_url, str_to_bytes, DEFAULT_PORTAL_URL,
+    URI_SKYNET_PREFIX,
 };
 
-use serde::{Deserialize};
+use serde::Deserialize;
 use sp_io::offchain;
 use sp_runtime::offchain::{self as rt_offchain, http};
 use sp_std::{if_std, prelude::Vec, str};
@@ -49,6 +50,8 @@ impl From<str::Utf8Error> for UploadError {
 pub struct UploadOptions<'a> {
     pub portal_url: &'a str,
     pub endpoint_upload: &'a str,
+
+    pub custom_cookie: Option<&'a str>,
 }
 
 impl Default for UploadOptions<'_> {
@@ -56,6 +59,7 @@ impl Default for UploadOptions<'_> {
         Self {
             portal_url: DEFAULT_PORTAL_URL,
             endpoint_upload: "/skynet/skyfile",
+            custom_cookie: None,
         }
     }
 }
@@ -143,8 +147,12 @@ pub fn upload_bytes(
     ]);
 
     // Initiate an external HTTP POST request. This is using high-level wrappers from `sp_runtime`.
-    let request = rt_offchain::http::Request::post(str::from_utf8(&url)?, vec![body.as_slice()])
+    let mut request = rt_offchain::http::Request::post(str::from_utf8(&url)?, vec![body.as_slice()])
         .add_header("Content-Type", str::from_utf8(&content_type)?);
+
+    if let Some(cookie) = opts.custom_cookie {
+        request = request.add_header("Cookie", cookie);
+    }
 
     // Keeping the offchain worker execution time reasonable, so limiting the call to be within 3s.
     let timeout = offchain::timestamp().add(rt_offchain::Duration::from_millis(3000));
@@ -193,6 +201,8 @@ mod tests {
     const REQUEST_BODY: &str = "--0000000000000000000000000000000000000000000000000000000000000000----\r\nContent-Disposition: form-data; name=\"file\"; filename=\"barfile\"\r\nContent-Type: application/octet-stream\r\n\r\nfoo\r\n--0000000000000000000000000000000000000000000000000000000000000000------\r\n";
     const RESPONSE_JSON: &str = "{\"skylink\": \"MABdWWku6YETM2zooGCjQi26Rs4a6Hb74q26i-vMMcximQ\", \"merkleroot\": \"foo\", \"bitfield\": 1028}";
     const CONTENT_TYPE_MULTIPART: &str = "multipart/form-data; boundary=\"0000000000000000000000000000000000000000000000000000000000000000----\"";
+
+    const JWT_COOKIE: &str = "MTYz...=="; // Don't use a full JWT as it's quite long.
 
     // TODO: Add testing option that is pub(crate) and #cfg[test] that allows passing in custom boundary.
     #[test]
@@ -247,6 +257,43 @@ mod tests {
                 FILE_NAME,
                 Some(&UploadOptions {
                     portal_url: CUSTOM_PORTAL_URL,
+                    ..Default::default()
+                }),
+            )
+            .unwrap();
+
+            // Check the response.
+            assert_eq!(skylink_returned, str_to_bytes(EXPECTED_DATA_LINK));
+        })
+    }
+
+    #[test]
+    fn should_upload_with_custom_cookie() {
+        let (offchain, state) = testing::TestOffchainExt::new();
+        let mut t = TestExternalities::default();
+        t.register_extension(OffchainExt::new(offchain));
+
+        // Add expected request.
+        state.write().expect_request(testing::PendingRequest {
+            method: "POST".into(),
+            uri: "https://siasky.net/skynet/skyfile".into(),
+            body: REQUEST_BODY.into(),
+            headers: vec![
+                ("Content-Type".to_owned(), CONTENT_TYPE_MULTIPART.to_owned()),
+                ("Cookie".to_owned(), JWT_COOKIE.into()),
+            ],
+            response: Some(RESPONSE_JSON.into()),
+            sent: true,
+            ..Default::default()
+        });
+
+        t.execute_with(|| {
+            // Upload
+            let skylink_returned = upload_bytes(
+                DATA,
+                FILE_NAME,
+                Some(&UploadOptions {
+                    custom_cookie: Some(JWT_COOKIE),
                     ..Default::default()
                 }),
             )
