@@ -1,7 +1,7 @@
 //! Pin functions.
 
 use crate::util::{
-    execute_request, make_url, str_to_bytes, RequestError, DEFAULT_PORTAL_URL, URI_SKYNET_PREFIX,
+    execute_get, make_url, str_to_bytes, RequestError, DEFAULT_PORTAL_URL, URI_SKYNET_PREFIX,
 };
 
 use sp_std::str;
@@ -53,7 +53,7 @@ pub fn pin_skylink(skylink: &str, opts: Option<&PinOptions>) -> Result<Vec<u8>, 
 
     let url = make_url(&[opts.portal_url, opts.endpoint_pin, skylink]);
 
-    let mut response = execute_request(str::from_utf8(&url)?)?;
+    let mut response = execute_get(str::from_utf8(&url)?)?;
 
     let headers = response.headers();
     let skylink = headers

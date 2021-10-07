@@ -1,11 +1,10 @@
 //! Upload functions.
 
 use crate::util::{
-    de_string_to_bytes, concat_bytes, concat_strs, make_url, str_to_bytes, DEFAULT_PORTAL_URL, URI_SKYNET_PREFIX,
+    de_string_to_bytes, concat_bytes, concat_strs, make_url, str_to_bytes, DEFAULT_PORTAL_URL, URI_SKYNET_PREFIX
 };
 
-use frame_support::debug;
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize};
 use sp_io::offchain;
 use sp_runtime::offchain::{self as rt_offchain, http};
 use sp_std::{if_std, prelude::Vec, str};
@@ -164,7 +163,6 @@ pub fn upload_bytes(
         .map_err(|_| UploadError::TimeoutError)??;
 
     if response.code >= 400 {
-        debug::error!("Unexpected http request status code: {}", response.code);
         return Err(UploadError::UnexpectedStatus(response.code));
     }
 

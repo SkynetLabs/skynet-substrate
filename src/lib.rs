@@ -13,13 +13,11 @@ mod registry;
 mod upload;
 mod util;
 
-pub use crypto::{Signature, HASH_LENGTH, PUBLIC_KEY_LENGTH, PRIVATE_KEY_LENGTH, SIGNATURE_LENGTH};
+pub use crypto::{Signature, HASH_LENGTH, PRIVATE_KEY_LENGTH, PUBLIC_KEY_LENGTH, SIGNATURE_LENGTH};
 pub use download::{download_bytes, DownloadError, DownloadOptions};
 pub use pin::{pin_skylink, PinError};
 pub use registry::{
-    get_entry,
-    // set_entry,
-    GetEntryError, GetEntryOptions, RegistryEntry, SetEntryError,
+    get_entry, set_entry, GetEntryError, GetEntryOptions, RegistryEntry, SetEntryError,
     SetEntryOptions, SignedRegistryEntry,
 };
 pub use upload::{upload_bytes, UploadError, UploadOptions};

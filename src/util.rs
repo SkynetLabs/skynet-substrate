@@ -1,7 +1,7 @@
 //! Utility functions.
 
 use frame_support::debug;
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serializer};
 use sp_io::offchain;
 use sp_runtime::offchain::{self as rt_offchain, http};
 use sp_std::str;
@@ -60,15 +60,18 @@ pub fn concat_strs(strs: &[&str]) -> Vec<u8> {
     str_bytes
 }
 
-// TODO: Generalize to different kinds of requests.
-pub fn execute_request(url: &str) -> Result<http::Response, RequestError> {
+pub fn execute_get(url: &str) -> Result<http::Response, RequestError> {
     // Initiate an external HTTP GET request. This is using high-level wrappers from `sp_runtime`.
     let request = http::Request::get(url);
 
+    execute_request(&request)
+}
+
+pub fn execute_request(request: &http::Request) -> Result<http::Response, RequestError> {
     // Keeping the offchain worker execution time reasonable, so limiting the call to be within 3s.
     let timeout = offchain::timestamp().add(rt_offchain::Duration::from_millis(3000));
 
-    let pending = request
+    let pending = request.clone()
         .deadline(timeout) // Setting the timeout time
         .send()?; // Sending the request out by the host
 
@@ -141,6 +144,13 @@ where
 {
     let s: &str = Deserialize::deserialize(de)?;
     Ok(s.as_bytes().to_vec())
+}
+
+pub fn ser_bytes_to_string<S>(v: &Vec<u8>, s: S) -> Result<S::Ok, S::Error>
+	where
+	S: Serializer,
+{
+    s.serialize_str(str::from_utf8(v).unwrap())
 }
 
 #[cfg(test)]

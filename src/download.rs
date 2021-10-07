@@ -1,6 +1,6 @@
 //! Download functions.
 
-use crate::util::{execute_request, make_url, RequestError, DEFAULT_PORTAL_URL, URI_SKYNET_PREFIX};
+use crate::util::{execute_get, make_url, RequestError, DEFAULT_PORTAL_URL, URI_SKYNET_PREFIX};
 
 use sp_std::{prelude::Vec, str};
 
@@ -53,7 +53,7 @@ pub fn download_bytes(
 
     let url = make_url(&[opts.portal_url, opts.endpoint_download, skylink]);
 
-    let response = execute_request(str::from_utf8(&url)?)?;
+    let response = execute_get(str::from_utf8(&url)?)?;
 
     Ok(response.body().collect::<Vec<u8>>())
 }
