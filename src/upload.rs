@@ -1,9 +1,6 @@
 //! Upload functions.
 
-use crate::util::{
-    concat_bytes, concat_strs, de_string_to_bytes, make_url, str_to_bytes, DEFAULT_PORTAL_URL,
-    URI_SKYNET_PREFIX,
-};
+use crate::util::{concat_strs, de_string_to_bytes, format_skylink, make_url, DEFAULT_PORTAL_URL};
 
 use serde::Deserialize;
 use sp_io::offchain;
@@ -147,8 +144,9 @@ pub fn upload_bytes(
     ]);
 
     // Initiate an external HTTP POST request. This is using high-level wrappers from `sp_runtime`.
-    let mut request = rt_offchain::http::Request::post(str::from_utf8(&url)?, vec![body.as_slice()])
-        .add_header("Content-Type", str::from_utf8(&content_type)?);
+    let mut request =
+        rt_offchain::http::Request::post(str::from_utf8(&url)?, vec![body.as_slice()])
+            .add_header("Content-Type", str::from_utf8(&content_type)?);
 
     if let Some(cookie) = opts.custom_cookie {
         request = request.add_header("Cookie", cookie);
@@ -180,10 +178,7 @@ pub fn upload_bytes(
     let resp_str = str::from_utf8(&resp_bytes)?;
     // Parse the str as JSON and store it in UploadResponse.
     let upload_response: UploadResponse = serde_json::from_str(resp_str)?;
-    Ok(concat_bytes(&[
-        &str_to_bytes(URI_SKYNET_PREFIX),
-        &upload_response.skylink,
-    ]))
+    Ok(format_skylink(&upload_response.skylink))
 }
 
 #[cfg(test)]

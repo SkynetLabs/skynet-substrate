@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
+base64 = { version = "0.13", default-features = false }
 bytes = { version = "1.1", default-features = false }
 ed25519-dalek = { version = '1.0', default-features = false, features = [
 	"u64_backend",
@@ -20,6 +21,7 @@ sp-std = { version = '3.0', default-features = false }
 [features]
 default = ['std']
 std = [
+    'base64/std',
     'bytes/std',
     'ed25519-dalek/std',
 	'frame-support/std',

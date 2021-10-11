@@ -4,9 +4,10 @@ use crate::crypto::{hash_data_key, hash_registry_entry, Signature};
 use crate::encoding::{
     decode_hex_bytes_to_bytes, decode_hex_to_bytes, encode_bytes_to_hex_bytes, vec_to_signature,
 };
+use crate::skylink::{new_ed25519_public_key, new_skylink_v2};
 use crate::util::{
-    concat_strs, de_string_to_bytes, execute_get, make_url, ser_bytes_to_string, str_to_bytes,
-    RequestError, DEFAULT_PORTAL_URL,
+    concat_strs, de_string_to_bytes, execute_get, format_skylink, make_url, ser_bytes_to_string,
+    str_to_bytes, RequestError, DEFAULT_PORTAL_URL,
 };
 
 use ed25519_dalek::Signer;
@@ -308,6 +309,23 @@ pub fn set_entry(
     Ok(())
 }
 
+/// Gets the entry link for the entry at the given `public_key` and `data_key`. This link stays the
+/// same even if the content at the entry changes.
+pub fn get_entry_link(
+    public_key: &str,
+    data_key: &str,
+    _opts: Option<&GetEntryOptions>,
+) -> Result<Vec<u8>, GetEntryError> {
+    // let default = Default::default();
+    // let opts = opts.unwrap_or(&default);
+
+    let sia_public_key = new_ed25519_public_key(public_key);
+    let tweak = hash_data_key(data_key);
+
+    let skylink = new_skylink_v2(sia_public_key, tweak).to_string();
+    Ok(format_skylink(&skylink))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -395,6 +413,17 @@ mod tests {
             // Set entry.
             let _ = set_entry(PRIVATE_KEY, &entry, None).unwrap();
         })
+    }
+
+    #[test]
+    fn should_get_the_correct_entry_link() {
+        const PUBLIC_KEY: &str = "a1790331b8b41a94644d01a7b482564e7049047812364bcabc32d399ad23f7e2";
+        const DATA_KEY: &str = "d321b3c31337047493c9b5a99675e9bdaea44218a31aad2fd7738209e7a5aca1";
+        const EXPECTED_ENTRY_LINK: &str = "sia://AQBT237lo425ivk3Si6sOKretXxsDwO6DT1M0_Ui3oT0OA";
+
+        let entry_link = get_entry_link(PUBLIC_KEY, DATA_KEY, None).unwrap();
+
+        assert_eq!(str::from_utf8(&entry_link).unwrap(), EXPECTED_ENTRY_LINK)
     }
 
     fn get_entry_make_entry() -> RegistryEntry {

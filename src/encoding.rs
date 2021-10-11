@@ -1,7 +1,19 @@
 use crate::crypto::{Signature, SIGNATURE_LENGTH};
+use crate::skylink::BASE64_ENCODED_SKYLINK_SIZE;
 use crate::util::str_to_bytes;
 
+use base64;
 use bytes::{BufMut, BytesMut};
+
+/// Encodes the bytes to a skylink encoded using base64 raw URL encoding.
+pub fn encode_skylink_base64(bytes: &[u8]) -> Vec<u8> {
+    let mut buf = Vec::new();
+    // Make sure we'll have a slice big enough.
+    buf.resize(BASE64_ENCODED_SKYLINK_SIZE, 0);
+
+    let _ = base64::encode_config_slice(bytes, base64::URL_SAFE_NO_PAD, &mut buf);
+    buf
+}
 
 pub fn decode_hex_to_bytes(hex: &str) -> Vec<u8> {
     decode_hex_bytes_to_bytes(&str_to_bytes(hex))

@@ -15,7 +15,7 @@ pub const PRIVATE_KEY_LENGTH: usize = ed25519_dalek::SECRET_KEY_LENGTH * 2;
 
 pub const SIGNATURE_LENGTH: usize = ed25519_dalek::SIGNATURE_LENGTH;
 
-fn hash_all(args: &[&[u8]]) -> Vec<u8> {
+pub fn hash_all(args: &[&[u8]]) -> Vec<u8> {
     let bytes = concat_bytes(args);
     hashing::blake2_256(&bytes).to_vec()
 }

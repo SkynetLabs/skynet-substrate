@@ -92,6 +92,13 @@ pub fn execute_request(request: &http::Request) -> Result<http::Response, Reques
     }
 }
 
+pub fn format_skylink(skylink: &[u8]) -> Vec<u8> {
+    concat_bytes(&[
+        &str_to_bytes(URI_SKYNET_PREFIX),
+        skylink,
+    ])
+}
+
 pub fn make_url(strs: &[&str]) -> Vec<u8> {
     let mut len = 0;
     for s in strs {
