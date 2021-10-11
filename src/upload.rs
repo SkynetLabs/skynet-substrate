@@ -9,13 +9,20 @@ use sp_std::{if_std, prelude::Vec, str};
 
 const PORTAL_FILE_FIELD_NAME: &str = "file";
 
+/// Upload error.
 #[derive(Debug)]
 pub enum UploadError {
+    /// HTTP error.
     HttpError(rt_offchain::HttpError),
+    /// HTTP error.
     HttpError2(http::Error),
+    /// JSON error.
     JsonError(serde_json::Error),
+    /// Timeout error.
     TimeoutError,
+    /// Unexpected status.
     UnexpectedStatus(u16),
+    /// UTF8 error.
     Utf8Error(str::Utf8Error),
 }
 
@@ -43,11 +50,15 @@ impl From<str::Utf8Error> for UploadError {
     }
 }
 
+/// Upload options.
 #[derive(Debug)]
 pub struct UploadOptions<'a> {
+    /// The portal URL.
     pub portal_url: &'a str,
+    /// The endpoint to contact.
     pub endpoint_upload: &'a str,
 
+    /// Optional custom cookie.
     pub custom_cookie: Option<&'a str>,
 }
 
@@ -74,6 +85,7 @@ struct UploadResponse {
     bitfield: u16,
 }
 
+/// Upload `bytes` to a file with `filename`.
 pub fn upload_bytes(
     bytes: &str,
     filename: &str,

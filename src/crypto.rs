@@ -5,14 +5,19 @@ use crate::util::concat_bytes;
 use sp_core::hashing;
 use sp_std::{prelude::Vec, str};
 
+/// The signature type.
 pub type Signature = [u8; SIGNATURE_LENGTH];
 
+/// The hash length.
 pub const HASH_LENGTH: usize = 32;
 
+/// The public key length.
 pub const PUBLIC_KEY_LENGTH: usize = ed25519_dalek::PUBLIC_KEY_LENGTH * 2;
 
+/// The private key length.
 pub const PRIVATE_KEY_LENGTH: usize = ed25519_dalek::SECRET_KEY_LENGTH * 2;
 
+/// The signature length.
 pub const SIGNATURE_LENGTH: usize = ed25519_dalek::SIGNATURE_LENGTH;
 
 pub fn hash_all(args: &[&[u8]]) -> Vec<u8> {

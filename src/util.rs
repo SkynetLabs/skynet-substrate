@@ -6,15 +6,22 @@ use sp_io::offchain;
 use sp_runtime::offchain::{self as rt_offchain, http};
 use sp_std::str;
 
+/// The default Skynet portal URL.
 pub const DEFAULT_PORTAL_URL: &str = "https://siasky.net";
 
+/// The Skynet URI protocol prefix.
 pub const URI_SKYNET_PREFIX: &str = "sia://";
 
+/// Request error.
 #[derive(Debug)]
 pub enum RequestError {
+    /// HTTP error.
     HttpError(rt_offchain::HttpError),
+    /// HTTP error.
     HttpError2(http::Error),
+    /// Timeout error.
     TimeoutError,
+    /// Unexpected status.
     UnexpectedStatus(u16),
 }
 
@@ -71,7 +78,8 @@ pub fn execute_request(request: &http::Request) -> Result<http::Response, Reques
     // Keeping the offchain worker execution time reasonable, so limiting the call to be within 3s.
     let timeout = offchain::timestamp().add(rt_offchain::Duration::from_millis(3000));
 
-    let pending = request.clone()
+    let pending = request
+        .clone()
         .deadline(timeout) // Setting the timeout time
         .send()?; // Sending the request out by the host
 
@@ -93,10 +101,7 @@ pub fn execute_request(request: &http::Request) -> Result<http::Response, Reques
 }
 
 pub fn format_skylink(skylink: &[u8]) -> Vec<u8> {
-    concat_bytes(&[
-        &str_to_bytes(URI_SKYNET_PREFIX),
-        skylink,
-    ])
+    concat_bytes(&[&str_to_bytes(URI_SKYNET_PREFIX), skylink])
 }
 
 pub fn make_url(strs: &[&str]) -> Vec<u8> {
@@ -154,8 +159,8 @@ where
 }
 
 pub fn ser_bytes_to_string<S>(v: &Vec<u8>, s: S) -> Result<S::Ok, S::Error>
-	where
-	S: Serializer,
+where
+    S: Serializer,
 {
     s.serialize_str(str::from_utf8(v).unwrap())
 }

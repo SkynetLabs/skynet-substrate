@@ -4,9 +4,12 @@ use crate::util::{execute_get, make_url, RequestError, DEFAULT_PORTAL_URL, URI_S
 
 use sp_std::{prelude::Vec, str};
 
+/// Download error.
 #[derive(Debug)]
 pub enum DownloadError {
+    /// Request error.
     RequestError(RequestError),
+    /// UTF8 error.
     Utf8Error(str::Utf8Error),
 }
 
@@ -22,9 +25,12 @@ impl From<str::Utf8Error> for DownloadError {
     }
 }
 
+/// Download options.
 #[derive(Debug)]
 pub struct DownloadOptions<'a> {
+    /// The portal URL.
     pub portal_url: &'a str,
+    /// The endpoint to contact.
     pub endpoint_download: &'a str,
 }
 
@@ -37,6 +43,7 @@ impl Default for DownloadOptions<'_> {
     }
 }
 
+/// Downloads the bytes at the given `skylink`.
 pub fn download_bytes(
     skylink: &str,
     opts: Option<&DownloadOptions>,

@@ -6,10 +6,14 @@ use crate::util::{
 
 use sp_std::str;
 
+/// Pin error.
 #[derive(Debug)]
 pub enum PinError {
+    /// Request error.
     RequestError(RequestError),
+    /// UTF8 error.
     Utf8Error(str::Utf8Error),
+    /// Validation error.
     ValidationError(Vec<u8>),
 }
 
@@ -25,9 +29,12 @@ impl From<str::Utf8Error> for PinError {
     }
 }
 
+/// Pin options.
 #[derive(Debug)]
 pub struct PinOptions<'a> {
+    /// The portal URL.
     pub portal_url: &'a str,
+    /// The endpoint to contact.
     pub endpoint_pin: &'a str,
 }
 
@@ -40,6 +47,7 @@ impl Default for PinOptions<'_> {
     }
 }
 
+/// Re-pins the given `skylink`.
 pub fn pin_skylink(skylink: &str, opts: Option<&PinOptions>) -> Result<Vec<u8>, PinError> {
     let default = Default::default();
     let opts = opts.unwrap_or(&default);

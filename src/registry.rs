@@ -21,11 +21,16 @@ const DEFAULT_GET_ENTRY_TIMEOUT: &str = "5";
 
 const ED25519_PREFIX_URL_ENCODED: &str = "ed25519%3A";
 
+/// Get entry error.
 #[derive(Debug)]
 pub enum GetEntryError {
+    /// JSON error.
     JsonError(serde_json::Error),
+    /// Request error.
     RequestError(RequestError),
+    /// Signature error.
     SignatureError(ed25519_dalek::SignatureError),
+    /// UTF8 error.
     Utf8Error(str::Utf8Error),
 }
 
@@ -53,15 +58,24 @@ impl From<str::Utf8Error> for GetEntryError {
     }
 }
 
+/// Set entry error.
 #[derive(Debug)]
 pub enum SetEntryError {
+    /// HTTP error.
     HttpError(rt_offchain::HttpError),
+    /// HTTP error.
     HttpError2(http::Error),
+    /// JSON error.
     JsonError(serde_json::Error),
+    /// Request error.
     RequestError(RequestError),
+    /// Signature error.
     SignatureError(ed25519_dalek::SignatureError),
+    /// Timeout error.
     TimeoutError,
+    /// Unexpected status.
     UnexpectedStatus(u16),
+    /// UTF8 error.
     Utf8Error(str::Utf8Error),
 }
 
@@ -101,9 +115,12 @@ impl From<str::Utf8Error> for SetEntryError {
     }
 }
 
+/// Get entry options.
 #[derive(Debug)]
 pub struct GetEntryOptions<'a> {
+    /// The portal URL.
     pub portal_url: &'a str,
+    /// The endpoint to contact.
     pub endpoint_get_entry: &'a str,
 }
 
@@ -116,9 +133,12 @@ impl Default for GetEntryOptions<'_> {
     }
 }
 
+/// Set entry options.
 #[derive(Debug)]
 pub struct SetEntryOptions<'a> {
+    /// The portal URL.
     pub portal_url: &'a str,
+    /// The endpoint to contact.
     pub endpoint_set_entry: &'a str,
 }
 
@@ -179,6 +199,7 @@ struct PublicKeyRequest {
     key: [u8; 32],
 }
 
+/// Gets registry entry for `public_key` and `data_key`.
 pub fn get_entry(
     public_key: &str,
     data_key: &str,
@@ -221,6 +242,7 @@ pub fn get_entry(
         .map(|()| signed_entry)?)
 }
 
+/// Gets registry entry URL for `public_key` and `data_key`.
 pub fn get_entry_url(
     public_key: &str,
     data_key: &str,
@@ -246,6 +268,7 @@ pub fn get_entry_url(
     ]))
 }
 
+/// Sets registry `entry` at `private_key`.
 pub fn set_entry(
     private_key: &str,
     entry: &RegistryEntry,

@@ -2,8 +2,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![forbid(unsafe_code)]
-// TODO: Uncomment
-// #![deny(missing_docs)]
+#![deny(missing_docs)]
 
 mod crypto;
 mod download;

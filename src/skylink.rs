@@ -2,7 +2,7 @@ use crate::crypto::hash_all;
 use crate::encoding::{decode_hex_to_bytes, encode_prefixed_bytes, encode_skylink_base64};
 use crate::util::str_to_bytes;
 
-use bytes::{BufMut, BytesMut, Buf};
+use bytes::{Buf, BufMut, BytesMut};
 
 /// The string length of the Skylink after it has been encoded using base64.
 pub const BASE64_ENCODED_SKYLINK_SIZE: usize = 46;
@@ -68,7 +68,7 @@ fn new_specifier(name: &str) -> Vec<u8> {
 
     let name_bytes = str_to_bytes(name);
     encoded.put(name_bytes.as_ref());
-    for _ in 0..SPECIFIER_LEN-name_bytes.len() {
+    for _ in 0..SPECIFIER_LEN - name_bytes.len() {
         encoded.put_u8(0);
     }
 
