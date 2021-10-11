@@ -158,7 +158,7 @@ where
     Ok(s.as_bytes().to_vec())
 }
 
-pub fn ser_bytes_to_string<S>(v: &Vec<u8>, s: S) -> Result<S::Ok, S::Error>
+pub fn ser_bytes_to_string<S>(v: &[u8], s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {

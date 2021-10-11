@@ -2,7 +2,6 @@ use crate::crypto::{Signature, SIGNATURE_LENGTH};
 use crate::skylink::BASE64_ENCODED_SKYLINK_SIZE;
 use crate::util::str_to_bytes;
 
-use base64;
 use bytes::{BufMut, BytesMut};
 
 /// Encodes the bytes to a skylink encoded using base64 raw URL encoding.
@@ -68,9 +67,9 @@ fn u4_to_hex_byte(u4: u8) -> u8 {
 
 pub fn encode_number(mut num: u64) -> [u8; 8] {
     let mut encoded: [u8; 8] = [0; 8];
-    for index in 0..encoded.len() {
+    for encoded_byte in &mut encoded {
         let byte = num & 0xff;
-        encoded[index] = byte as u8;
+        *encoded_byte = byte as u8;
         num >>= 8;
     }
     encoded
@@ -108,10 +107,8 @@ pub fn vec_to_signature(v: Vec<u8>) -> Signature {
     }
 
     let mut signature = [0; SIGNATURE_LENGTH];
-    let mut i = 0;
-    for byte in v {
+    for (i, byte) in v.into_iter().enumerate() {
         signature[i] = byte;
-        i += 1;
     }
     signature
 }

@@ -288,7 +288,7 @@ pub fn set_entry(
 
     let ed25519_public_key = ed25519_keypair.public;
     let data_key_hashed_hex =
-        encode_bytes_to_hex_bytes(&hash_data_key(&str::from_utf8(&entry.data_key)?));
+        encode_bytes_to_hex_bytes(&hash_data_key(str::from_utf8(&entry.data_key)?));
 
     let data = SetEntryRequest {
         publickey: PublicKeyRequest {
@@ -364,9 +364,6 @@ mod tests {
     const PUBLIC_KEY: &str = "658b900df55e983ce85f3f9fb2a088d568ab514e7bbda51cfbfb16ea945378d9";
     const PRIVATE_KEY: &str = "7caffac49ac914a541b28723f11776d36ce81e7b9b0c96ccacd1302db429c79c658b900df55e983ce85f3f9fb2a088d568ab514e7bbda51cfbfb16ea945378d9";
     const DATA_KEY: &str = "app";
-    const ENCODED_PK: &str =
-        "ed25519%3A658b900df55e983ce85f3f9fb2a088d568ab514e7bbda51cfbfb16ea945378d9";
-    const ENCODED_DK: &str = "7c96a0537ab2aaac9cfe0eca217732f4e10791625b4ab4c17e4d91c8078713b9";
 
     // Hex-encoded skylink.
     const GET_ENTRY_DATA: &str = "43414241425f31447430464a73787173755f4a34546f644e4362434776744666315579735f3345677a4f6c546367";

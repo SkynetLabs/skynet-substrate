@@ -201,7 +201,6 @@ mod tests {
     use sp_core::offchain::{testing, OffchainExt};
     use sp_io::TestExternalities;
 
-    const DATA_LINK: &str = "MABdWWku6YETM2zooGCjQi26Rs4a6Hb74q26i-vMMcximQ";
     const EXPECTED_DATA_LINK: &str = "sia://MABdWWku6YETM2zooGCjQi26Rs4a6Hb74q26i-vMMcximQ";
     const DATA: &str = "foo";
     const FILE_NAME: &str = "barfile";
