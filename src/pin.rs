@@ -36,6 +36,8 @@ pub struct PinOptions<'a> {
     pub portal_url: &'a str,
     /// The endpoint to contact.
     pub endpoint_pin: &'a str,
+    /// Optional custom cookie.
+    pub custom_cookie: Option<&'a str>,
 }
 
 impl Default for PinOptions<'_> {
@@ -43,6 +45,7 @@ impl Default for PinOptions<'_> {
         Self {
             portal_url: DEFAULT_PORTAL_URL,
             endpoint_pin: "/skynet/pin",
+            custom_cookie: None,
         }
     }
 }
@@ -61,7 +64,7 @@ pub fn pin_skylink(skylink: &str, opts: Option<&PinOptions>) -> Result<Vec<u8>, 
 
     let url = make_url(&[opts.portal_url, opts.endpoint_pin, skylink]);
 
-    let mut response = execute_get(str::from_utf8(&url)?)?;
+    let mut response = execute_get(str::from_utf8(&url)?, opts.custom_cookie)?;
 
     let headers = response.headers();
     let skylink = headers

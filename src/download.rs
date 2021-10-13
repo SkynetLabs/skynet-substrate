@@ -32,6 +32,8 @@ pub struct DownloadOptions<'a> {
     pub portal_url: &'a str,
     /// The endpoint to contact.
     pub endpoint_download: &'a str,
+    /// Optional custom cookie.
+    pub custom_cookie: Option<&'a str>,
 }
 
 impl Default for DownloadOptions<'_> {
@@ -39,6 +41,7 @@ impl Default for DownloadOptions<'_> {
         Self {
             portal_url: DEFAULT_PORTAL_URL,
             endpoint_download: "/",
+            custom_cookie: None,
         }
     }
 }
@@ -60,7 +63,7 @@ pub fn download_bytes(
 
     let url = make_url(&[opts.portal_url, opts.endpoint_download, skylink]);
 
-    let response = execute_get(str::from_utf8(&url)?)?;
+    let response = execute_get(str::from_utf8(&url)?, opts.custom_cookie)?;
 
     Ok(response.body().collect::<Vec<u8>>())
 }

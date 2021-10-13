@@ -122,6 +122,8 @@ pub struct GetEntryOptions<'a> {
     pub portal_url: &'a str,
     /// The endpoint to contact.
     pub endpoint_get_entry: &'a str,
+    /// Optional custom cookie.
+    pub custom_cookie: Option<&'a str>,
 }
 
 impl Default for GetEntryOptions<'_> {
@@ -129,6 +131,7 @@ impl Default for GetEntryOptions<'_> {
         Self {
             portal_url: DEFAULT_PORTAL_URL,
             endpoint_get_entry: "/skynet/registry",
+            custom_cookie: None,
         }
     }
 }
@@ -140,6 +143,8 @@ pub struct SetEntryOptions<'a> {
     pub portal_url: &'a str,
     /// The endpoint to contact.
     pub endpoint_set_entry: &'a str,
+    /// Optional custom cookie.
+    pub custom_cookie: Option<&'a str>,
 }
 
 impl Default for SetEntryOptions<'_> {
@@ -147,6 +152,7 @@ impl Default for SetEntryOptions<'_> {
         Self {
             portal_url: DEFAULT_PORTAL_URL,
             endpoint_set_entry: "/skynet/registry",
+            custom_cookie: None,
         }
     }
 }
@@ -210,7 +216,7 @@ pub fn get_entry(
 
     let url = get_entry_url(public_key, data_key, Some(opts))?;
 
-    let resp = execute_get(str::from_utf8(&url)?)?;
+    let resp = execute_get(str::from_utf8(&url)?, opts.custom_cookie)?;
 
     // Read the response body and collect it to a vector of bytes.
     let resp_bytes = resp.body().collect::<Vec<u8>>();
@@ -307,7 +313,12 @@ pub fn set_entry(
     // Execute request.
     // Initiate an external HTTP POST request. This is using high-level wrappers from `sp_runtime`.
     let url = make_url(&[opts.portal_url, opts.endpoint_set_entry]);
-    let request = rt_offchain::http::Request::post(str::from_utf8(&url)?, vec![body.as_slice()]);
+    let mut request =
+        rt_offchain::http::Request::post(str::from_utf8(&url)?, vec![body.as_slice()]);
+
+    if let Some(cookie) = opts.custom_cookie {
+        request = request.add_header("Cookie", cookie);
+    }
 
     // Keeping the offchain worker execution time reasonable, so limiting the call to be within 3s.
     let timeout = offchain::timestamp().add(rt_offchain::Duration::from_millis(3000));

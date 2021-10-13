@@ -67,9 +67,13 @@ pub fn concat_strs(strs: &[&str]) -> Vec<u8> {
     str_bytes
 }
 
-pub fn execute_get(url: &str) -> Result<http::Response, RequestError> {
+pub fn execute_get(url: &str, custom_cookie: Option<&str>) -> Result<http::Response, RequestError> {
     // Initiate an external HTTP GET request. This is using high-level wrappers from `sp_runtime`.
-    let request = http::Request::get(url);
+    let mut request = http::Request::get(url);
+
+    if let Some(cookie) = custom_cookie {
+        request = request.add_header("Cookie", cookie);
+    }
 
     execute_request(&request)
 }

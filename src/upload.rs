@@ -57,7 +57,6 @@ pub struct UploadOptions<'a> {
     pub portal_url: &'a str,
     /// The endpoint to contact.
     pub endpoint_upload: &'a str,
-
     /// Optional custom cookie.
     pub custom_cookie: Option<&'a str>,
 }
