@@ -1,6 +1,5 @@
 //! Utility functions.
 
-use frame_support::debug;
 use serde::{Deserialize, Deserializer, Serializer};
 use sp_io::offchain;
 use sp_runtime::offchain::{self as rt_offchain, http};
@@ -97,7 +96,6 @@ pub fn execute_request(request: &http::Request) -> Result<http::Response, Reques
         .map_err(|_| RequestError::TimeoutError)??;
 
     if response.code >= 400 {
-        debug::error!("Unexpected http request status code: {}", response.code);
         Err(RequestError::UnexpectedStatus(response.code))
     } else {
         Ok(response)
