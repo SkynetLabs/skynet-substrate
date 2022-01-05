@@ -5,7 +5,7 @@ use crate::util::{concat_strs, de_string_to_bytes, format_skylink, make_url, DEF
 use serde::Deserialize;
 use sp_io::offchain;
 use sp_runtime::offchain::{self as rt_offchain, http};
-use sp_std::{if_std, prelude::Vec, str};
+use sp_std::{if_std, prelude::Vec, str, vec};
 
 const PORTAL_FILE_FIELD_NAME: &str = "file";
 
@@ -197,7 +197,7 @@ mod tests {
     use super::*;
     use crate::util::str_to_bytes;
 
-    use sp_core::offchain::{testing, OffchainExt};
+    use sp_core::offchain::{testing, OffchainWorkerExt};
     use sp_io::TestExternalities;
 
     const EXPECTED_DATA_LINK: &str = "sia://MABdWWku6YETM2zooGCjQi26Rs4a6Hb74q26i-vMMcximQ";
@@ -214,7 +214,7 @@ mod tests {
     fn should_upload_and_return_data_link() {
         let (offchain, state) = testing::TestOffchainExt::new();
         let mut t = TestExternalities::default();
-        t.register_extension(OffchainExt::new(offchain));
+        t.register_extension(OffchainWorkerExt::new(offchain));
 
         // Add expected request.
         state.write().expect_request(testing::PendingRequest {
@@ -242,7 +242,7 @@ mod tests {
 
         let (offchain, state) = testing::TestOffchainExt::new();
         let mut t = TestExternalities::default();
-        t.register_extension(OffchainExt::new(offchain));
+        t.register_extension(OffchainWorkerExt::new(offchain));
 
         // Add expected request.
         state.write().expect_request(testing::PendingRequest {
@@ -276,7 +276,7 @@ mod tests {
     fn should_upload_with_custom_cookie() {
         let (offchain, state) = testing::TestOffchainExt::new();
         let mut t = TestExternalities::default();
-        t.register_extension(OffchainExt::new(offchain));
+        t.register_extension(OffchainWorkerExt::new(offchain));
 
         // Add expected request.
         state.write().expect_request(testing::PendingRequest {

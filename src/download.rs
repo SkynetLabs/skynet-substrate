@@ -73,7 +73,7 @@ mod tests {
     use super::*;
     use crate::util::str_to_bytes;
 
-    use sp_core::offchain::{testing, OffchainExt};
+    use sp_core::offchain::{testing, OffchainWorkerExt};
     use sp_io::TestExternalities;
 
     const DATA_LINK: &str = "MABdWWku6YETM2zooGCjQi26Rs4a6Hb74q26i-vMMcximQ";
@@ -83,7 +83,7 @@ mod tests {
     fn should_download_from_data_link() {
         let (offchain, state) = testing::TestOffchainExt::new();
         let mut t = TestExternalities::default();
-        t.register_extension(OffchainExt::new(offchain));
+        t.register_extension(OffchainWorkerExt::new(offchain));
 
         // Add expected request.
         state.write().expect_request(testing::PendingRequest {
@@ -110,7 +110,7 @@ mod tests {
 
         let (offchain, state) = testing::TestOffchainExt::new();
         let mut t = TestExternalities::default();
-        t.register_extension(OffchainExt::new(offchain));
+        t.register_extension(OffchainWorkerExt::new(offchain));
 
         // Add expected request.
         state.write().expect_request(testing::PendingRequest {

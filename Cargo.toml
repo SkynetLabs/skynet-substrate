@@ -17,6 +17,7 @@ serde_json = { version = '1.0', default-features = false, features = ['alloc'] }
 # Substrate packages
 
 sp-core = { version = "4.1.0-dev", default-features = false, git = 'https://github.com/paritytech/substrate.git' }
+sp-core-hashing = { version = "4.0.0", default-features = false, git = 'https://github.com/paritytech/substrate.git' }
 sp-io = { version = "4.0.0-dev", default-features = false, git = 'https://github.com/paritytech/substrate.git' }
 sp-runtime = { version = "4.0.0", default-features = false, git = 'https://github.com/paritytech/substrate.git' }
 sp-std = { version = "4.0.0", default-features = false, git = 'https://github.com/paritytech/substrate.git' }
@@ -32,6 +33,7 @@ std = [
     'serde_json/std',
 
     'sp-core/std',
+    'sp-core-hashing/std',
     'sp-io/std',
     'sp-runtime/std',
 	'sp-std/std',

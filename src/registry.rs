@@ -14,7 +14,7 @@ use ed25519_dalek::Signer;
 use serde::{Deserialize, Serialize};
 use sp_io::offchain;
 use sp_runtime::offchain::{self as rt_offchain, http};
-use sp_std::{prelude::Vec, str};
+use sp_std::{prelude::Vec, str, vec};
 
 /// The get entry timeout. Not configurable. Not exported as this is planned to be removed.
 const DEFAULT_GET_ENTRY_TIMEOUT: &str = "5";
@@ -366,7 +366,7 @@ mod tests {
     use crate::encoding::{decode_hex_to_bytes, vec_to_signature};
     use crate::util::str_to_bytes;
 
-    use sp_core::offchain::{testing, OffchainExt};
+    use sp_core::offchain::{testing, OffchainWorkerExt};
     use sp_io::TestExternalities;
     use sp_std::str;
 
@@ -403,7 +403,7 @@ mod tests {
     fn should_get_and_verify_entry() {
         let (offchain, state) = testing::TestOffchainExt::new();
         let mut t = TestExternalities::default();
-        t.register_extension(OffchainExt::new(offchain));
+        t.register_extension(OffchainWorkerExt::new(offchain));
 
         // Add expected request.
         state.write().expect_request(testing::PendingRequest {
@@ -427,7 +427,7 @@ mod tests {
     fn should_sign_and_set_entry() {
         let (offchain, state) = testing::TestOffchainExt::new();
         let mut t = TestExternalities::default();
-        t.register_extension(OffchainExt::new(offchain));
+        t.register_extension(OffchainWorkerExt::new(offchain));
 
         // Add expected request.
         state.write().expect_request(testing::PendingRequest {

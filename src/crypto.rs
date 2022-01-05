@@ -2,7 +2,6 @@ use crate::encoding;
 use crate::registry::RegistryEntry;
 use crate::util::concat_bytes;
 
-use sp_core::hashing;
 use sp_std::{prelude::Vec, str};
 
 /// The signature type.
@@ -22,12 +21,12 @@ pub const SIGNATURE_LENGTH: usize = ed25519_dalek::SIGNATURE_LENGTH;
 
 pub fn hash_all(args: &[&[u8]]) -> Vec<u8> {
     let bytes = concat_bytes(args);
-    hashing::blake2_256(&bytes).to_vec()
+    sp_core_hashing::blake2_256(&bytes).to_vec()
 }
 
 pub fn hash_data_key(data_key: &str) -> Vec<u8> {
     let bytes = encoding::encode_str(data_key);
-    hashing::blake2_256(&bytes).to_vec()
+    sp_core_hashing::blake2_256(&bytes).to_vec()
 }
 
 pub fn hash_registry_entry(registry_entry: &RegistryEntry) -> Result<Vec<u8>, str::Utf8Error> {

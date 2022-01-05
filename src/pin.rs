@@ -4,7 +4,7 @@ use crate::util::{
     execute_get, make_url, str_to_bytes, RequestError, DEFAULT_PORTAL_URL, URI_SKYNET_PREFIX,
 };
 
-use sp_std::str;
+use sp_std::{str, vec::Vec};
 
 /// Pin error.
 #[derive(Debug)]
@@ -84,7 +84,7 @@ pub fn pin_skylink(skylink: &str, opts: Option<&PinOptions>) -> Result<Vec<u8>, 
 mod tests {
     use super::*;
 
-    use sp_core::offchain::{testing, OffchainExt};
+    use sp_core::offchain::{testing, OffchainWorkerExt};
     use sp_io::TestExternalities;
 
     const DATA_LINK: &str = "MABdWWku6YETM2zooGCjQi26Rs4a6Hb74q26i-vMMcximQ";
@@ -94,7 +94,7 @@ mod tests {
     fn should_pin_data_link() {
         let (offchain, state) = testing::TestOffchainExt::new();
         let mut t = TestExternalities::default();
-        t.register_extension(OffchainExt::new(offchain));
+        t.register_extension(OffchainWorkerExt::new(offchain));
 
         // Add expected request.
         state.write().expect_request(testing::PendingRequest {

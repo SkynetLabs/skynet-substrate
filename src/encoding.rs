@@ -3,6 +3,7 @@ use crate::skylink::BASE64_ENCODED_SKYLINK_SIZE;
 use crate::util::str_to_bytes;
 
 use bytes::{BufMut, BytesMut};
+use sp_std::vec::Vec;
 
 /// Encodes the bytes to a skylink encoded using base64 raw URL encoding.
 pub fn encode_skylink_base64(bytes: &[u8]) -> Vec<u8> {
@@ -117,6 +118,8 @@ pub fn vec_to_signature(v: Vec<u8>) -> Signature {
 mod tests {
     use super::*;
     use crate::util::str_to_bytes;
+
+    use sp_std::vec;
 
     #[test]
     fn should_decode_hex() {

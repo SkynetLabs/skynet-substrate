@@ -3,6 +3,7 @@ use crate::encoding::{decode_hex_to_bytes, encode_prefixed_bytes, encode_skylink
 use crate::util::str_to_bytes;
 
 use bytes::{BufMut, BytesMut};
+use sp_std::vec::Vec;
 
 /// The string length of the Skylink after it has been encoded using base64.
 pub const BASE64_ENCODED_SKYLINK_SIZE: usize = 46;

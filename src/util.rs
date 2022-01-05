@@ -3,7 +3,7 @@
 use serde::{Deserialize, Deserializer, Serializer};
 use sp_io::offchain;
 use sp_runtime::offchain::{self as rt_offchain, http};
-use sp_std::str;
+use sp_std::{str, vec::Vec};
 
 /// The default Skynet portal URL.
 pub const DEFAULT_PORTAL_URL: &str = "https://siasky.net";
