@@ -16,11 +16,15 @@ serde_json = { version = '1.0', default-features = false, features = ['alloc'] }
 
 # Substrate packages
 
-sp-core = { version = "4.1.0-dev", default-features = false, git = 'https://github.com/paritytech/substrate.git' }
-sp-core-hashing = { version = "4.0.0", default-features = false, git = 'https://github.com/paritytech/substrate.git' }
-sp-io = { version = "4.0.0-dev", default-features = false, git = 'https://github.com/paritytech/substrate.git' }
-sp-runtime = { version = "4.0.0", default-features = false, git = 'https://github.com/paritytech/substrate.git' }
-sp-std = { version = "4.0.0", default-features = false, git = 'https://github.com/paritytech/substrate.git' }
+# The dependencies have to be pinned to a specific tag and the runtime must be
+# built off the same tag. It won't work otherwise -- I was getting "duplicate
+# lang item" errors.
+
+sp-core = { version = "4.1.0-dev", default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = "monthly-2022-01" }
+sp-core-hashing = { version = "4.0.0", default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = "monthly-2022-01" }
+sp-io = { version = "4.0.0-dev", default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = "monthly-2022-01" }
+sp-runtime = { version = "4.0.0", default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = "monthly-2022-01" }
+sp-std = { version = "4.0.0", default-features = false, git = 'https://github.com/paritytech/substrate.git', tag = "monthly-2022-01" }
 
 [features]
 default = ['std']
