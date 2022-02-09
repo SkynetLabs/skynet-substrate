@@ -43,7 +43,7 @@ pub fn new_ed25519_public_key(public_key: &str) -> SiaPublicKey {
 }
 
 /// Creates a new v2 skylink. Matches `NewSkylinkV2` in skyd.
-pub fn new_skylink_v2(sia_public_key: SiaPublicKey, tweak: Vec<u8>) -> SiaSkylink {
+pub fn new_skylink_v2(sia_public_key: SiaPublicKey, tweak: &[u8]) -> SiaSkylink {
     const VERSION: u16 = 2;
 
     let bitfield = VERSION - 1;
@@ -58,8 +58,8 @@ const SPECIFIER_LEN: usize = 16;
 
 /// A helper to derive an entry id for a registry key value pair. Matches `DeriveRegistryEntryID` in
 /// Sia.
-fn derive_registry_entry_id(public_key: SiaPublicKey, tweak: Vec<u8>) -> Vec<u8> {
-    hash_all(&[&public_key.marshal_sia(), &tweak])
+fn derive_registry_entry_id(public_key: SiaPublicKey, tweak: &[u8]) -> Vec<u8> {
+    hash_all(&[&public_key.marshal_sia(), tweak])
 }
 
 /// Returns a specifier for given name, a specifier can only be 16 bytes so we panic if the given
@@ -114,7 +114,7 @@ mod tests {
         const EXPECTED_SKYLINK: &str = "AQB7zHVDtD-PikoAD_0zzFbWWPcY-IJoJRHXFJcwoU-WvQ";
 
         let sia_public_key = new_ed25519_public_key(PUBLIC_KEY);
-        let skylink = new_skylink_v2(sia_public_key, decode_hex_to_bytes(DATA_KEY));
+        let skylink = new_skylink_v2(sia_public_key, &decode_hex_to_bytes(DATA_KEY));
 
         assert_eq!(skylink.to_string(), str_to_bytes(EXPECTED_SKYLINK));
     }

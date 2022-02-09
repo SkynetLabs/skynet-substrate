@@ -21,6 +21,13 @@ const DEFAULT_GET_ENTRY_TIMEOUT: &str = "5";
 
 const ED25519_PREFIX_URL_ENCODED: &str = "ed25519%3A";
 
+/// The maximum length for entry data when setting entry data.
+const MAX_ENTRY_LENGTH: usize = 70;
+
+// ======
+// ERRORS
+// ======
+
 /// Get entry error.
 #[derive(Debug)]
 pub enum GetEntryError {
@@ -115,6 +122,47 @@ impl From<str::Utf8Error> for SetEntryError {
     }
 }
 
+/// Set entry data error.
+#[derive(Debug)]
+pub enum SetEntryDataError {
+    /// Data exceeds max allowed width.
+    DataTooLongError(usize),
+    GetEntryError(GetEntryError),
+    SetEntryError(SetEntryError),
+    /// Signature error.
+    SignatureError(ed25519_dalek::SignatureError),
+    /// UTF8 error.
+    Utf8Error(str::Utf8Error),
+}
+
+impl From<GetEntryError> for SetEntryDataError {
+    fn from(err: GetEntryError) -> Self {
+        Self::GetEntryError(err)
+    }
+}
+
+impl From<SetEntryError> for SetEntryDataError {
+    fn from(err: SetEntryError) -> Self {
+        Self::SetEntryError(err)
+    }
+}
+
+impl From<ed25519_dalek::SignatureError> for SetEntryDataError {
+    fn from(err: ed25519_dalek::SignatureError) -> Self {
+        Self::SignatureError(err)
+    }
+}
+
+impl From<str::Utf8Error> for SetEntryDataError {
+    fn from(err: str::Utf8Error) -> Self {
+        Self::Utf8Error(err)
+    }
+}
+
+// =======
+// OPTIONS
+// =======
+
 /// Get entry options.
 #[derive(Debug)]
 pub struct GetEntryOptions<'a> {
@@ -155,6 +203,22 @@ impl Default for SetEntryOptions<'_> {
             custom_cookie: None,
         }
     }
+}
+
+/// Set entry data options.
+#[derive(Debug, Default)]
+pub struct SetEntryDataOptions<'a> {
+    pub get_entry_opts: Option<&'a GetEntryOptions<'a>>,
+    pub set_entry_opts: Option<&'a SetEntryOptions<'a>>,
+}
+
+// =====
+// TYPES
+// =====
+
+#[derive(Debug, PartialEq)]
+pub struct EntryData {
+    pub data: Option<Vec<u8>>,
 }
 
 /// Registry entry.
@@ -205,6 +269,10 @@ struct PublicKeyRequest {
     key: [u8; 32],
 }
 
+// =========
+// FUNCTIONS
+// =========
+
 /// Gets registry entry for `public_key` and `data_key`.
 pub fn get_entry(
     public_key: &str,
@@ -216,7 +284,16 @@ pub fn get_entry(
 
     let url = get_entry_url(public_key, data_key, Some(opts))?;
 
-    let resp = execute_get(str::from_utf8(&url)?, opts.custom_cookie)?;
+    let resp = match execute_get(str::from_utf8(&url)?, opts.custom_cookie) {
+        // If a 404 status was found, return a null entry.
+        Err(RequestError::UnexpectedStatus(404)) => {
+            return Ok(SignedRegistryEntry {
+                entry: None,
+                signature: None,
+            })
+        }
+        x => x,
+    }?;
 
     // Read the response body and collect it to a vector of bytes.
     let resp_bytes = resp.body().collect::<Vec<u8>>();
@@ -243,9 +320,9 @@ pub fn get_entry(
     let ed25519_public_key = ed25519_dalek::PublicKey::from_bytes(&public_key_bytes)?;
 
     // Verify the signature, return an error if it could not be verified.
-    Ok(ed25519_public_key
-        .verify_strict(&message, &ed25519_dalek::Signature::new(signature))
-        .map(|()| signed_entry)?)
+    ed25519_public_key.verify_strict(&message, &ed25519_dalek::Signature::new(signature))?;
+
+    Ok(signed_entry)
 }
 
 /// Gets registry entry URL for `public_key` and `data_key`.
@@ -343,6 +420,52 @@ pub fn set_entry(
     Ok(())
 }
 
+/// Sets the raw entry data at the given private key and data key.
+pub fn set_entry_data(
+    private_key: &str,
+    data_key: &str,
+    data: &[u8],
+    opts: Option<&SetEntryDataOptions>,
+) -> Result<EntryData, SetEntryDataError> {
+    if data.len() > MAX_ENTRY_LENGTH {
+        return Err(SetEntryDataError::DataTooLongError(data.len()));
+    }
+
+    let default = Default::default();
+    let opts = opts.unwrap_or(&default);
+
+    // Get the public key.
+    let private_key_bytes = decode_hex_to_bytes(private_key);
+    // TODO: Are the public and private key bytes in the right order?
+    // The "private key" is actually a keypair that contains the public and private keys.
+    let ed25519_keypair = ed25519_dalek::Keypair::from_bytes(&private_key_bytes)?;
+    let public_key_bytes = ed25519_keypair.public.to_bytes();
+    let public_key_hex_bytes = encode_bytes_to_hex_bytes(&public_key_bytes);
+    let public_key = str::from_utf8(&public_key_hex_bytes)?;
+
+    // Get the entry in order to get the revision number.
+    let signed_entry = get_entry(public_key, data_key, opts.get_entry_opts)?;
+    let revision = if let Some(entry) = signed_entry.entry {
+        entry.revision + 1
+    } else {
+        0
+    };
+
+    // Construct the entry.
+    let entry = RegistryEntry {
+        data_key: str_to_bytes(data_key),
+        data: data.to_vec(),
+        revision, // TODO: check for overflow
+    };
+
+    // Set the entry.
+    set_entry(private_key, &entry, opts.set_entry_opts)?;
+
+    Ok(EntryData {
+        data: Some(data.to_vec()),
+    })
+}
+
 /// Gets the entry link for the entry at the given `public_key` and `data_key`. This link stays the
 /// same even if the content at the entry changes.
 pub fn get_entry_link(
@@ -356,7 +479,7 @@ pub fn get_entry_link(
     let sia_public_key = new_ed25519_public_key(public_key);
     let tweak = hash_data_key(data_key);
 
-    let skylink = new_skylink_v2(sia_public_key, tweak).to_string();
+    let skylink = new_skylink_v2(sia_public_key, &tweak).to_string();
     Ok(format_skylink(&skylink))
 }
 
@@ -419,9 +542,47 @@ mod tests {
             let returned_signed_entry = get_entry(PUBLIC_KEY, DATA_KEY, None).unwrap();
 
             // Check the response.
-            assert_eq!(returned_signed_entry, get_entry_make_signed_entry());
+            let entry = RegistryEntry {
+                data_key: str_to_bytes(DATA_KEY),
+                data: decode_hex_to_bytes(GET_ENTRY_DATA),
+                revision: GET_ENTRY_REVISION,
+            };
+            let signed_entry = SignedRegistryEntry {
+                entry: Some(entry),
+                signature: Some(vec_to_signature(decode_hex_to_bytes(SIGNATURE))),
+            };
+            assert_eq!(returned_signed_entry, signed_entry);
         })
     }
+
+    // TODO: How to simulate a 404 response?
+    // #[test]
+    // fn should_return_none_if_entry_not_found() {
+    //     let (offchain, state) = testing::TestOffchainExt::new();
+    //     let mut t = TestExternalities::default();
+    //     t.register_extension(OffchainWorkerExt::new(offchain));
+
+    //     // Add expected request.
+    //     state.write().expect_request(testing::PendingRequest {
+    //         method: "GET".into(),
+    //         uri: EXPECTED_URL.into(),
+    //         response: None,
+    //         sent: true,
+    //         ..Default::default()
+    //     });
+
+    //     t.execute_with(|| {
+    //         // Get entry.
+    //         let returned_signed_entry = get_entry(PUBLIC_KEY, DATA_KEY, None).unwrap();
+
+    //         // Check the response.
+    // let null_entry = SignedRegistryEntry {
+    //     entry: None,
+    //     signature: None,
+    // };
+    //         assert_eq!(returned_signed_entry, null_entry);
+    //     });
+    // }
 
     #[test]
     fn should_sign_and_set_entry() {
@@ -440,9 +601,55 @@ mod tests {
         });
 
         t.execute_with(|| {
-            let entry = set_entry_make_entry();
+            let entry = RegistryEntry {
+                data_key: str_to_bytes(DATA_KEY),
+                data: SET_ENTRY_DATA.to_vec(),
+                revision: SET_ENTRY_REVISION,
+            };
             // Set entry.
             let _ = set_entry(PRIVATE_KEY, &entry, None).unwrap();
+        })
+    }
+
+    #[test]
+    fn should_update_entry_data() {
+        const DATA: &[u8] = &[1, 2, 3];
+        const SET_ENTRY_REQUEST_JSON: &str = "{\"publickey\":{\"algorithm\":\"ed25519\",\"key\":[101,139,144,13,245,94,152,60,232,95,63,159,178,160,136,213,104,171,81,78,123,189,165,28,251,251,22,234,148,83,120,217]},\"datakey\":\"7c96a0537ab2aaac9cfe0eca217732f4e10791625b4ab4c17e4d91c8078713b9\",\"revision\":12,\"data\":[1,2,3],\"signature\":[89,214,206,198,28,243,240,118,171,61,137,4,89,6,26,79,112,54,72,239,109,148,187,171,72,112,21,158,57,121,62,183,17,97,231,54,169,132,50,222,130,255,131,162,121,139,27,55,65,98,114,241,150,197,182,48,76,230,221,58,165,210,195,4]}";
+
+        let (offchain, state) = testing::TestOffchainExt::new();
+        let mut t = TestExternalities::default();
+        t.register_extension(OffchainWorkerExt::new(offchain));
+
+        // Add expected request.
+        state.write().expect_request(testing::PendingRequest {
+            method: "GET".into(),
+            uri: EXPECTED_URL.into(),
+            response: Some(ENTRY_DATA_RESPONSE_JSON.into()),
+            sent: true,
+            ..Default::default()
+        });
+
+        // Add expected request.
+        state.write().expect_request(testing::PendingRequest {
+            method: "POST".into(),
+            uri: "https://siasky.net/skynet/registry".into(),
+            body: SET_ENTRY_REQUEST_JSON.into(),
+            response: Some("".into()),
+            sent: true,
+            ..Default::default()
+        });
+
+        t.execute_with(|| {
+            // Set entry data.
+            let returned_data = set_entry_data(PRIVATE_KEY, DATA_KEY, DATA, None).unwrap();
+
+            // Check the response.
+            assert_eq!(
+                returned_data,
+                EntryData {
+                    data: Some(DATA.to_vec())
+                }
+            );
         })
     }
 
@@ -455,28 +662,5 @@ mod tests {
         let entry_link = get_entry_link(PUBLIC_KEY, DATA_KEY, None).unwrap();
 
         assert_eq!(str::from_utf8(&entry_link).unwrap(), EXPECTED_ENTRY_LINK)
-    }
-
-    fn get_entry_make_entry() -> RegistryEntry {
-        RegistryEntry {
-            data_key: str_to_bytes(DATA_KEY),
-            data: decode_hex_to_bytes(GET_ENTRY_DATA),
-            revision: GET_ENTRY_REVISION,
-        }
-    }
-
-    fn get_entry_make_signed_entry() -> SignedRegistryEntry {
-        SignedRegistryEntry {
-            entry: Some(get_entry_make_entry()),
-            signature: Some(vec_to_signature(decode_hex_to_bytes(SIGNATURE))),
-        }
-    }
-
-    fn set_entry_make_entry() -> RegistryEntry {
-        RegistryEntry {
-            data_key: str_to_bytes(DATA_KEY),
-            data: SET_ENTRY_DATA.to_vec(),
-            revision: SET_ENTRY_REVISION,
-        }
     }
 }
