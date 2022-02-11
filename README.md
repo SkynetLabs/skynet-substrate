@@ -1,5 +1,15 @@
 # Skynet Substrate
 
+## Overview
+
+This is the official Skynet SDK for Substrate development in Rust!
+
+It contains functions for uploading and downloading data as well as for interacting with the Skynet registry.
+
+## Examples
+
+- [Skynet Offchain Worker Example Pallet](https://github.com/SkynetLabs/skynet-substrate-offchain-worker-node/tree/skynet-substrate/frame/examples/offchain-worker)
+
 ## Developing
 
 ### Testing
