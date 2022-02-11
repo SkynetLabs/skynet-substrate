@@ -78,6 +78,7 @@ fn u4_to_hex_byte(u4: u8) -> u8 {
 }
 
 #[allow(dead_code)]
+/// Decodes the given byte array into a u64 number.
 fn decode_number(encoded_num: [u8; 8]) -> u64 {
     let mut decoded: u64 = 0;
     for encoded_byte in encoded_num.into_iter().rev() {
@@ -87,6 +88,7 @@ fn decode_number(encoded_num: [u8; 8]) -> u64 {
     decoded
 }
 
+/// Converts the given number into a byte array. Uses little-endian encoding.
 pub fn encode_number(mut num: u64) -> [u8; 8] {
     let mut encoded: [u8; 8] = [0; 8];
     for encoded_byte in &mut encoded {
