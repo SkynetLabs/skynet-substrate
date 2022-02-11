@@ -152,6 +152,20 @@ pub fn str_to_bytes(s: &str) -> Vec<u8> {
     s.as_bytes().to_vec()
 }
 
+pub fn trim_prefix<'a>(s: &'a str, prefix: &str) -> &'a str {
+    let mut i = 0;
+
+    loop {
+        if i >= prefix.len() {
+            return &s[i..];
+        } else if i >= s.len() || s.chars().nth(i) != prefix.chars().nth(i) {
+            return s;
+        }
+
+        i += 1;
+    }
+}
+
 pub fn de_string_to_bytes<'de, D>(de: D) -> Result<Vec<u8>, D::Error>
 where
     D: Deserializer<'de>,
@@ -169,7 +183,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{make_url, str_to_bytes, DEFAULT_PORTAL_URL};
+    use super::*;
+
     use sp_std::str;
 
     #[test]
@@ -190,5 +205,13 @@ mod tests {
         const TEST_STR: &str = "foos";
 
         assert_eq!(TEST_STR, str::from_utf8(&str_to_bytes(TEST_STR)).unwrap());
+    }
+
+    #[test]
+    fn should_trim_prefix() {
+        const DATA_LINK: &str = "sia://AAA6Z7R0sjreLCr35fJKhMXuc8CE6mxRhkHQtmgtJGzqvw";
+        const EXPECTED_RESULT: &str = "AAA6Z7R0sjreLCr35fJKhMXuc8CE6mxRhkHQtmgtJGzqvw";
+
+        assert_eq!(trim_prefix(DATA_LINK, URI_SKYNET_PREFIX), EXPECTED_RESULT);
     }
 }

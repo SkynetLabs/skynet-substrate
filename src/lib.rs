@@ -4,6 +4,8 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+// TODO: Consolidate all error types into a single crate-wide error type.
+
 mod crypto;
 mod download;
 mod encoding;
@@ -17,8 +19,8 @@ pub use crypto::{Signature, HASH_LENGTH, PRIVATE_KEY_LENGTH, PUBLIC_KEY_LENGTH, 
 pub use download::{download_bytes, DownloadError, DownloadOptions};
 pub use pin::{pin_skylink, PinError};
 pub use registry::{
-    get_entry, get_entry_link, set_entry, set_entry_data, GetEntryError, GetEntryOptions,
-    RegistryEntry, SetEntryError, SetEntryOptions, SignedRegistryEntry,
+    get_entry, get_entry_link, set_data_link, set_entry, set_entry_data, GetEntryError,
+    GetEntryOptions, RegistryEntry, SetEntryError, SetEntryOptions, SignedRegistryEntry,
 };
 pub use upload::{upload_bytes, UploadError, UploadOptions};
 pub use util::{RequestError, DEFAULT_PORTAL_URL, URI_SKYNET_PREFIX};

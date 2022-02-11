@@ -1,9 +1,20 @@
 use crate::crypto::{Signature, SIGNATURE_LENGTH};
-use crate::skylink::BASE64_ENCODED_SKYLINK_SIZE;
+use crate::skylink::{BASE64_ENCODED_SKYLINK_SIZE, RAW_SKYLINK_SIZE};
 use crate::util::str_to_bytes;
 
 use bytes::{BufMut, BytesMut};
-use sp_std::vec::Vec;
+use sp_std::{str, vec::Vec};
+
+/// Decodes the encoded base64 skylink to raw bytes.
+pub fn decode_skylink_base64(skylink: &str) -> Vec<u8> {
+    let skylink_bytes = str_to_bytes(skylink);
+    let mut buf = Vec::new();
+    // Make sure we'll have a slice big enough.
+    buf.resize(RAW_SKYLINK_SIZE, 0);
+
+    let _ = base64::decode_config_slice(skylink_bytes, base64::URL_SAFE_NO_PAD, &mut buf);
+    buf
+}
 
 /// Encodes the bytes to a skylink encoded using base64 raw URL encoding.
 pub fn encode_skylink_base64(bytes: &[u8]) -> Vec<u8> {
@@ -66,6 +77,16 @@ fn u4_to_hex_byte(u4: u8) -> u8 {
     }
 }
 
+#[allow(dead_code)]
+fn decode_number(encoded_num: [u8; 8]) -> u64 {
+    let mut decoded: u64 = 0;
+    for encoded_byte in encoded_num.into_iter().rev() {
+        decoded <<= 8;
+        decoded |= encoded_byte as u64
+    }
+    decoded
+}
+
 pub fn encode_number(mut num: u64) -> [u8; 8] {
     let mut encoded: [u8; 8] = [0; 8];
     for encoded_byte in &mut encoded {
@@ -122,6 +143,16 @@ mod tests {
     use sp_std::vec;
 
     #[test]
+    fn should_decode_and_encode_skylinks() {
+        let skylink = "AAA6Z7R0sjreLCr35fJKhMXuc8CE6mxRhkHQtmgtJGzqvw";
+
+        let decoded_bytes = decode_skylink_base64(skylink);
+        assert_ne!(decoded_bytes.len(), 0);
+        let encoded_bytes = encode_skylink_base64(&decoded_bytes);
+        assert_eq!(skylink, str::from_utf8(&encoded_bytes).unwrap());
+    }
+
+    #[test]
     fn should_decode_hex() {
         let s = decode_hex_to_bytes("ff");
         assert_eq!(s, vec![255]);
@@ -158,6 +189,15 @@ mod tests {
 
         let bytes = encode_number(256);
         assert_eq!(bytes, [0, 1, 0, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn should_encode_and_decode_number() {
+        let num = 0;
+        assert_eq!(decode_number(encode_number(num)), num);
+
+        let num = 123_456;
+        assert_eq!(decode_number(encode_number(num)), num);
     }
 
     #[test]

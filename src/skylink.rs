@@ -1,6 +1,8 @@
 use crate::crypto::hash_all;
-use crate::encoding::{decode_hex_to_bytes, encode_prefixed_bytes, encode_skylink_base64};
-use crate::util::str_to_bytes;
+use crate::encoding::{
+    decode_hex_to_bytes, decode_skylink_base64, encode_prefixed_bytes, encode_skylink_base64,
+};
+use crate::util::{str_to_bytes, trim_prefix, URI_SKYNET_PREFIX};
 
 use bytes::{BufMut, BytesMut};
 use sp_std::vec::Vec;
@@ -9,7 +11,7 @@ use sp_std::vec::Vec;
 pub const BASE64_ENCODED_SKYLINK_SIZE: usize = 46;
 
 /// The raw size in bytes of the data that gets put into a link.
-const RAW_SKYLINK_SIZE: usize = 34;
+pub const RAW_SKYLINK_SIZE: usize = 34;
 
 pub struct SiaSkylink {
     pub bitfield: u16,
@@ -92,6 +94,12 @@ impl SiaPublicKey {
 
         encoded.to_vec()
     }
+}
+
+pub fn decode_skylink(skylink: &str) -> Vec<u8> {
+    let encoded = trim_prefix(skylink, URI_SKYNET_PREFIX);
+
+    decode_skylink_base64(encoded)
 }
 
 #[cfg(test)]

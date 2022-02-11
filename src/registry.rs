@@ -4,7 +4,7 @@ use crate::crypto::{hash_data_key, hash_registry_entry, Signature};
 use crate::encoding::{
     decode_hex_bytes_to_bytes, decode_hex_to_bytes, encode_bytes_to_hex_bytes, vec_to_signature,
 };
-use crate::skylink::{new_ed25519_public_key, new_skylink_v2};
+use crate::skylink::{decode_skylink, new_ed25519_public_key, new_skylink_v2};
 use crate::util::{
     concat_strs, de_string_to_bytes, execute_get, format_skylink, make_url, ser_bytes_to_string,
     str_to_bytes, RequestError, DEFAULT_PORTAL_URL,
@@ -420,6 +420,19 @@ pub fn set_entry(
     Ok(())
 }
 
+/// Sets the datalink for the entry at the given private key and data key.
+pub fn set_data_link(
+    private_key: &str,
+    data_key: &str,
+    data_link: &str,
+    opts: Option<&SetEntryDataOptions>,
+) -> Result<(), SetEntryDataError> {
+    let data = decode_skylink(data_link);
+
+    set_entry_data(private_key, data_key, &data, opts)?;
+    Ok(())
+}
+
 /// Sets the raw entry data at the given private key and data key.
 pub fn set_entry_data(
     private_key: &str,
@@ -445,6 +458,7 @@ pub fn set_entry_data(
 
     // Get the entry in order to get the revision number.
     let signed_entry = get_entry(public_key, data_key, opts.get_entry_opts)?;
+    // TODO: check for overflow
     let revision = if let Some(entry) = signed_entry.entry {
         entry.revision + 1
     } else {
@@ -455,7 +469,7 @@ pub fn set_entry_data(
     let entry = RegistryEntry {
         data_key: str_to_bytes(data_key),
         data: data.to_vec(),
-        revision, // TODO: check for overflow
+        revision,
     };
 
     // Set the entry.
@@ -612,6 +626,40 @@ mod tests {
     }
 
     #[test]
+    fn should_set_data_link() {
+        const DATA_LINK: &str = "sia://AAA6Z7R0sjreLCr35fJKhMXuc8CE6mxRhkHQtmgtJGzqvw";
+        const SET_ENTRY_REQUEST_JSON: &str = "{\"publickey\":{\"algorithm\":\"ed25519\",\"key\":[101,139,144,13,245,94,152,60,232,95,63,159,178,160,136,213,104,171,81,78,123,189,165,28,251,251,22,234,148,83,120,217]},\"datakey\":\"7c96a0537ab2aaac9cfe0eca217732f4e10791625b4ab4c17e4d91c8078713b9\",\"revision\":12,\"data\":[0,0,58,103,180,116,178,58,222,44,42,247,229,242,74,132,197,238,115,192,132,234,108,81,134,65,208,182,104,45,36,108,234,191],\"signature\":[230,73,17,53,225,37,252,223,75,109,202,5,44,45,201,52,121,240,88,90,19,152,205,231,144,102,84,116,33,37,14,161,175,164,154,149,217,169,202,41,231,14,246,177,148,13,87,79,63,4,68,103,39,101,246,148,163,249,164,91,163,243,12,9]}";
+
+        let (offchain, state) = testing::TestOffchainExt::new();
+        let mut t = TestExternalities::default();
+        t.register_extension(OffchainWorkerExt::new(offchain));
+
+        // Add expected request.
+        state.write().expect_request(testing::PendingRequest {
+            method: "GET".into(),
+            uri: EXPECTED_URL.into(),
+            response: Some(ENTRY_DATA_RESPONSE_JSON.into()),
+            sent: true,
+            ..Default::default()
+        });
+
+        // Add expected request.
+        state.write().expect_request(testing::PendingRequest {
+            method: "POST".into(),
+            uri: "https://siasky.net/skynet/registry".into(),
+            body: SET_ENTRY_REQUEST_JSON.into(),
+            response: Some("".into()),
+            sent: true,
+            ..Default::default()
+        });
+
+        t.execute_with(|| {
+            // Set data link.
+            let _ = set_data_link(PRIVATE_KEY, DATA_KEY, DATA_LINK, None).unwrap();
+        })
+    }
+
+    #[test]
     fn should_update_entry_data() {
         const DATA: &[u8] = &[1, 2, 3];
         const SET_ENTRY_REQUEST_JSON: &str = "{\"publickey\":{\"algorithm\":\"ed25519\",\"key\":[101,139,144,13,245,94,152,60,232,95,63,159,178,160,136,213,104,171,81,78,123,189,165,28,251,251,22,234,148,83,120,217]},\"datakey\":\"7c96a0537ab2aaac9cfe0eca217732f4e10791625b4ab4c17e4d91c8078713b9\",\"revision\":12,\"data\":[1,2,3],\"signature\":[89,214,206,198,28,243,240,118,171,61,137,4,89,6,26,79,112,54,72,239,109,148,187,171,72,112,21,158,57,121,62,183,17,97,231,54,169,132,50,222,130,255,131,162,121,139,27,55,65,98,114,241,150,197,182,48,76,230,221,58,165,210,195,4]}";
@@ -654,13 +702,24 @@ mod tests {
     }
 
     #[test]
-    fn should_get_the_correct_entry_link() {
+    fn should_get_the_correct_entry_link_1() {
         const PUBLIC_KEY: &str = "a1790331b8b41a94644d01a7b482564e7049047812364bcabc32d399ad23f7e2";
         const DATA_KEY: &str = "d321b3c31337047493c9b5a99675e9bdaea44218a31aad2fd7738209e7a5aca1";
         const EXPECTED_ENTRY_LINK: &str = "sia://AQBT237lo425ivk3Si6sOKretXxsDwO6DT1M0_Ui3oT0OA";
 
         let entry_link = get_entry_link(PUBLIC_KEY, DATA_KEY, None).unwrap();
 
-        assert_eq!(str::from_utf8(&entry_link).unwrap(), EXPECTED_ENTRY_LINK)
+        assert_eq!(str::from_utf8(&entry_link).unwrap(), EXPECTED_ENTRY_LINK);
+    }
+
+    #[test]
+    fn should_get_the_correct_entry_link_2() {
+        const PUBLIC_KEY: &str = "658b900df55e983ce85f3f9fb2a088d568ab514e7bbda51cfbfb16ea945378d9";
+        const DATA_KEY: &str = "historical-block-weights";
+        const EXPECTED_ENTRY_LINK: &str = "sia://AQBLxu38T6ceg0ey_UUbexZzo_Y8AwFvIdYePG96FSVU1A";
+
+        let entry_link = get_entry_link(PUBLIC_KEY, DATA_KEY, None).unwrap();
+
+        assert_eq!(str::from_utf8(&entry_link).unwrap(), EXPECTED_ENTRY_LINK);
     }
 }
