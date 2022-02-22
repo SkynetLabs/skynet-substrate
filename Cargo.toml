@@ -1,6 +1,14 @@
 [package]
 name = "skynet-substrate"
 version = "0.1.0"
+description = "This is the official Skynet SDK for Substrate development in Rust! It contains functions for uploading and downloading data as well as for interacting with the Skynet registry."
+license = "MIT"
+homepage = "https://github.com/SkynetLabs/skynet-substrate"
+repository = "https://github.com/SkynetLabs/skynet-substrate"
+documentation = "https://docs.rs/skynet-substrate"
+readme = "README.md"
+keywords = ["skynet", "substrate", "polkadot", "sdk", "offchain"]
+categories = ["no-std"]
 edition = "2021"
 
 [dependencies]
