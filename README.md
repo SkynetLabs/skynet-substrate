@@ -29,3 +29,12 @@ cargo tarpaulin
 
 If you're not developing on a Linux system, you can just raise a PR on our repo
 and our CI will profile the coverage.
+
+## Docs
+
+The docs were built with:
+
+```sh
+cargo doc --no-deps
+cp -R ./target/doc/skynet_substrate/ docs
+```
