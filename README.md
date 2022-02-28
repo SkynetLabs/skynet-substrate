@@ -32,6 +32,8 @@ and our CI will profile the coverage.
 
 ## Docs
 
+See the docs [here](https://skynetlabs.github.io/skynet-substrate/skynet_substrate/).
+
 The docs were built with:
 
 ```sh
