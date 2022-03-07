@@ -126,7 +126,7 @@ impl From<str::Utf8Error> for SetEntryError {
 #[derive(Debug)]
 pub enum SetEntryDataError {
     /// Data exceeds max allowed width.
-    DataTooLongError(usize),
+    DataTooLong(usize),
     GetEntryError(GetEntryError),
     SetEntryError(SetEntryError),
     /// Signature error.
@@ -320,7 +320,7 @@ pub fn get_entry(
     let ed25519_public_key = ed25519_dalek::PublicKey::from_bytes(&public_key_bytes)?;
 
     // Verify the signature, return an error if it could not be verified.
-    ed25519_public_key.verify_strict(&message, &ed25519_dalek::Signature::new(signature))?;
+    ed25519_public_key.verify_strict(&message, &ed25519_dalek::Signature::from_bytes(&signature)?)?;
 
     Ok(signed_entry)
 }
@@ -441,7 +441,7 @@ pub fn set_entry_data(
     opts: Option<&SetEntryDataOptions>,
 ) -> Result<EntryData, SetEntryDataError> {
     if data.len() > MAX_ENTRY_LENGTH {
-        return Err(SetEntryDataError::DataTooLongError(data.len()));
+        return Err(SetEntryDataError::DataTooLong(data.len()));
     }
 
     let default = Default::default();
