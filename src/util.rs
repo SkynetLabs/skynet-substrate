@@ -1,40 +1,10 @@
 //! Utility functions.
 
 use serde::{Deserialize, Deserializer, Serializer};
-use sp_io::offchain;
-use sp_runtime::offchain::{self as rt_offchain, http};
 use sp_std::{str, vec::Vec};
-
-/// The default Skynet portal URL.
-pub const DEFAULT_PORTAL_URL: &str = "https://siasky.net";
 
 /// The Skynet URI protocol prefix.
 pub const URI_SKYNET_PREFIX: &str = "sia://";
-
-/// Request error.
-#[derive(Debug)]
-pub enum RequestError {
-    /// HTTP error.
-    HttpError(rt_offchain::HttpError),
-    /// HTTP error.
-    HttpError2(http::Error),
-    /// Timeout error.
-    TimeoutError,
-    /// Unexpected status.
-    UnexpectedStatus(u16),
-}
-
-impl From<http::Error> for RequestError {
-    fn from(err: http::Error) -> Self {
-        Self::HttpError2(err)
-    }
-}
-
-impl From<rt_offchain::HttpError> for RequestError {
-    fn from(err: rt_offchain::HttpError) -> Self {
-        Self::HttpError(err)
-    }
-}
 
 pub fn concat_bytes(byte_slices: &[&[u8]]) -> Vec<u8> {
     let mut len = 0;
@@ -64,42 +34,6 @@ pub fn concat_strs(strs: &[&str]) -> Vec<u8> {
     }
 
     str_bytes
-}
-
-pub fn execute_get(url: &str, custom_cookie: Option<&str>) -> Result<http::Response, RequestError> {
-    // Initiate an external HTTP GET request. This is using high-level wrappers from `sp_runtime`.
-    let mut request = http::Request::get(url);
-
-    if let Some(cookie) = custom_cookie {
-        request = request.add_header("Cookie", cookie);
-    }
-
-    execute_request(&request)
-}
-
-pub fn execute_request(request: &http::Request) -> Result<http::Response, RequestError> {
-    // Keeping the offchain worker execution time reasonable, so limiting the call to be within 3s.
-    let timeout = offchain::timestamp().add(rt_offchain::Duration::from_millis(3000));
-
-    let pending = request
-        .clone()
-        .deadline(timeout) // Setting the timeout time
-        .send()?; // Sending the request out by the host
-
-    // By default, the http request is async from the runtime perspective. So we are asking the
-    // runtime to wait here. The returning value here is a `Result` of `Result`, so we are
-    // unwrapping it twice by two `?`
-    //
-    // ref: https://substrate.dev/rustdocs/v2.0.0-rc3/sp_runtime/offchain/http/struct.PendingRequest.html#method.try_wait
-    let response = pending
-        .try_wait(timeout)
-        .map_err(|_| RequestError::TimeoutError)??;
-
-    if response.code >= 400 {
-        Err(RequestError::UnexpectedStatus(response.code))
-    } else {
-        Ok(response)
-    }
 }
 
 pub fn format_skylink(skylink: &[u8]) -> Vec<u8> {
@@ -184,6 +118,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::request::DEFAULT_PORTAL_URL;
 
     use sp_std::str;
 

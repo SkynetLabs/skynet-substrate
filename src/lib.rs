@@ -11,6 +11,7 @@ mod download;
 mod encoding;
 mod pin;
 mod registry;
+mod request;
 mod skylink;
 mod upload;
 mod util;
@@ -22,5 +23,6 @@ pub use registry::{
     get_entry, get_entry_link, set_data_link, set_entry, set_entry_data, GetEntryError,
     GetEntryOptions, RegistryEntry, SetEntryError, SetEntryOptions, SignedRegistryEntry,
 };
+pub use request::{CommonOptions, RequestError, DEFAULT_PORTAL_URL};
 pub use upload::{upload_bytes, UploadError, UploadOptions};
-pub use util::{RequestError, DEFAULT_PORTAL_URL, URI_SKYNET_PREFIX};
+pub use util::URI_SKYNET_PREFIX;

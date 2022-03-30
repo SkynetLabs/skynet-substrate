@@ -1,14 +1,14 @@
 //! Upload functions.
 
+use crate::request::CommonOptions;
 use crate::util::{
     concat_bytes, concat_strs, de_string_to_bytes, format_skylink, make_url, str_to_bytes,
-    DEFAULT_PORTAL_URL,
 };
 
 use serde::Deserialize;
 use sp_io::offchain;
 use sp_runtime::offchain::{self as rt_offchain, http};
-use sp_std::{if_std, prelude::Vec, str, vec};
+use sp_std::{prelude::Vec, str, vec};
 
 const PORTAL_FILE_FIELD_NAME: &str = "file";
 
@@ -56,23 +56,20 @@ impl From<str::Utf8Error> for UploadError {
 /// Upload options.
 #[derive(Debug)]
 pub struct UploadOptions<'a> {
-    /// The portal URL.
-    pub portal_url: &'a str,
+    /// Common options.
+    pub common: CommonOptions<'a>,
     /// The endpoint to contact.
     pub endpoint_upload: &'a str,
     /// Timeout.
     pub timeout: u64,
-    /// Optional custom cookie.
-    pub custom_cookie: Option<&'a str>,
 }
 
 impl Default for UploadOptions<'_> {
     fn default() -> Self {
         Self {
-            portal_url: DEFAULT_PORTAL_URL,
+            common: Default::default(),
             endpoint_upload: "/skynet/skyfile",
             timeout: 3_000,
-            custom_cookie: None,
         }
     }
 }
@@ -100,14 +97,11 @@ pub fn upload_bytes(
     let opts = opts.unwrap_or(default);
 
     // Construct the URL.
-    let url = make_url(&[opts.portal_url, opts.endpoint_upload]);
+    let url = make_url(&[opts.common.portal_url, opts.endpoint_upload]);
 
     // Build the request body boundary.
 
     let timestamp: u64 = offchain::timestamp().unix_millis();
-    if_std! {
-        println!("{:?}", timestamp);
-    }
 
     // Make a 68-character boundary.
     // TODO: Use a random boundary? Wasn't sure how to do that in Substrate.
@@ -164,7 +158,8 @@ pub fn upload_bytes(
     let mut request = rt_offchain::http::Request::post(str::from_utf8(&url)?, vec![body_bytes])
         .add_header("Content-Type", str::from_utf8(&content_type)?);
 
-    if let Some(cookie) = opts.custom_cookie {
+    // NOTE: Can't use `add_headers` here because of a mismatched type error.
+    if let Some(cookie) = opts.common.custom_cookie {
         request = request.add_header("Cookie", cookie);
     }
 
@@ -266,7 +261,10 @@ mod tests {
                 &str_to_bytes(DATA),
                 FILE_NAME,
                 Some(&UploadOptions {
-                    portal_url: CUSTOM_PORTAL_URL,
+                    common: CommonOptions {
+                        portal_url: CUSTOM_PORTAL_URL,
+                        ..Default::default()
+                    },
                     ..Default::default()
                 }),
             )
@@ -303,7 +301,10 @@ mod tests {
                 &str_to_bytes(DATA),
                 FILE_NAME,
                 Some(&UploadOptions {
-                    custom_cookie: Some(JWT_COOKIE),
+                    common: CommonOptions {
+                        custom_cookie: Some(JWT_COOKIE),
+                        ..Default::default()
+                    },
                     ..Default::default()
                 }),
             )

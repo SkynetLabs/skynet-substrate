@@ -107,6 +107,15 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_decode_skylink() {
+        const SKYLINK: &str = "XABvi7JtJbQSMAcDwnUnmp2FKDPjg8_tTTFP4BwMSxVdEg";
+
+        let bytes = decode_skylink(SKYLINK);
+
+        assert_eq!(bytes, vec![92, 0, 111, 139, 178, 109, 37, 180, 18, 48, 7, 3, 194, 117, 39, 154, 157, 133, 40, 51, 227, 131, 207, 237, 77, 49, 79, 224, 28, 12, 75, 21, 93, 18]);
+    }
+
+    #[test]
     fn should_return_correct_specifier() {
         const SPECIFIER: &str = "testing";
         const EXPECTED: &[u8] = &[116, 101, 115, 116, 105, 110, 103, 0, 0, 0, 0, 0, 0, 0, 0, 0];

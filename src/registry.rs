@@ -4,10 +4,10 @@ use crate::crypto::{hash_data_key, hash_registry_entry, Signature};
 use crate::encoding::{
     decode_hex_bytes_to_bytes, decode_hex_to_bytes, encode_bytes_to_hex_bytes, vec_to_signature,
 };
+use crate::request::{execute_get, CommonOptions, RequestError};
 use crate::skylink::{decode_skylink, new_ed25519_public_key, new_skylink_v2};
 use crate::util::{
-    concat_strs, de_string_to_bytes, execute_get, format_skylink, make_url, ser_bytes_to_string,
-    str_to_bytes, RequestError, DEFAULT_PORTAL_URL,
+    concat_strs, de_string_to_bytes, format_skylink, make_url, ser_bytes_to_string, str_to_bytes,
 };
 
 use ed25519_dalek::Signer;
@@ -166,20 +166,17 @@ impl From<str::Utf8Error> for SetEntryDataError {
 /// Get entry options.
 #[derive(Debug)]
 pub struct GetEntryOptions<'a> {
-    /// The portal URL.
-    pub portal_url: &'a str,
+    /// Common options.
+    pub common: CommonOptions<'a>,
     /// The endpoint to contact.
     pub endpoint_get_entry: &'a str,
-    /// Optional custom cookie.
-    pub custom_cookie: Option<&'a str>,
 }
 
 impl Default for GetEntryOptions<'_> {
     fn default() -> Self {
         Self {
-            portal_url: DEFAULT_PORTAL_URL,
+            common: Default::default(),
             endpoint_get_entry: "/skynet/registry",
-            custom_cookie: None,
         }
     }
 }
@@ -187,20 +184,17 @@ impl Default for GetEntryOptions<'_> {
 /// Set entry options.
 #[derive(Debug)]
 pub struct SetEntryOptions<'a> {
-    /// The portal URL.
-    pub portal_url: &'a str,
+    /// Common options.
+    pub common: CommonOptions<'a>,
     /// The endpoint to contact.
     pub endpoint_set_entry: &'a str,
-    /// Optional custom cookie.
-    pub custom_cookie: Option<&'a str>,
 }
 
 impl Default for SetEntryOptions<'_> {
     fn default() -> Self {
         Self {
-            portal_url: DEFAULT_PORTAL_URL,
+            common: Default::default(),
             endpoint_set_entry: "/skynet/registry",
-            custom_cookie: None,
         }
     }
 }
@@ -284,7 +278,7 @@ pub fn get_entry(
 
     let url = get_entry_url(public_key, data_key, Some(opts))?;
 
-    let resp = match execute_get(str::from_utf8(&url)?, opts.custom_cookie) {
+    let resp = match execute_get(str::from_utf8(&url)?, &opts.common) {
         // If a 404 status was found, return a null entry.
         Err(RequestError::UnexpectedStatus(404)) => {
             return Ok(SignedRegistryEntry {
@@ -320,7 +314,8 @@ pub fn get_entry(
     let ed25519_public_key = ed25519_dalek::PublicKey::from_bytes(&public_key_bytes)?;
 
     // Verify the signature, return an error if it could not be verified.
-    ed25519_public_key.verify_strict(&message, &ed25519_dalek::Signature::from_bytes(&signature)?)?;
+    ed25519_public_key
+        .verify_strict(&message, &ed25519_dalek::Signature::from_bytes(&signature)?)?;
 
     Ok(signed_entry)
 }
@@ -334,7 +329,7 @@ pub fn get_entry_url(
     let default = Default::default();
     let opts = opts.unwrap_or(&default);
 
-    let url = make_url(&[opts.portal_url, opts.endpoint_get_entry]);
+    let url = make_url(&[opts.common.portal_url, opts.endpoint_get_entry]);
 
     let data_key_hash = hash_data_key(data_key);
     let data_key_hash_hex = encode_bytes_to_hex_bytes(&data_key_hash);
@@ -389,11 +384,12 @@ pub fn set_entry(
 
     // Execute request.
     // Initiate an external HTTP POST request. This is using high-level wrappers from `sp_runtime`.
-    let url = make_url(&[opts.portal_url, opts.endpoint_set_entry]);
+    let url = make_url(&[opts.common.portal_url, opts.endpoint_set_entry]);
     let mut request =
         rt_offchain::http::Request::post(str::from_utf8(&url)?, vec![body.as_slice()]);
 
-    if let Some(cookie) = opts.custom_cookie {
+    // NOTE: Can't use `add_headers` here or we get weird lifetime errors.
+    if let Some(cookie) = opts.common.custom_cookie {
         request = request.add_header("Cookie", cookie);
     }
 

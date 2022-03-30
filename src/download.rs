@@ -1,6 +1,7 @@
 //! Download functions.
 
-use crate::util::{execute_get, make_url, RequestError, DEFAULT_PORTAL_URL, URI_SKYNET_PREFIX};
+use crate::request::{execute_get, CommonOptions, RequestError};
+use crate::util::{make_url, URI_SKYNET_PREFIX};
 
 use sp_std::{prelude::Vec, str};
 
@@ -28,20 +29,17 @@ impl From<str::Utf8Error> for DownloadError {
 /// Download options.
 #[derive(Debug)]
 pub struct DownloadOptions<'a> {
-    /// The portal URL.
-    pub portal_url: &'a str,
+    /// Common options.
+    pub common: CommonOptions<'a>,
     /// The endpoint to contact.
     pub endpoint_download: &'a str,
-    /// Optional custom cookie.
-    pub custom_cookie: Option<&'a str>,
 }
 
 impl Default for DownloadOptions<'_> {
     fn default() -> Self {
         Self {
-            portal_url: DEFAULT_PORTAL_URL,
+            common: Default::default(),
             endpoint_download: "/",
-            custom_cookie: None,
         }
     }
 }
@@ -61,9 +59,9 @@ pub fn download_bytes(
         skylink
     };
 
-    let url = make_url(&[opts.portal_url, opts.endpoint_download, skylink]);
+    let url = make_url(&[opts.common.portal_url, opts.endpoint_download, skylink]);
 
-    let response = execute_get(str::from_utf8(&url)?, opts.custom_cookie)?;
+    let response = execute_get(str::from_utf8(&url)?, &opts.common)?;
 
     Ok(response.body().collect::<Vec<u8>>())
 }
@@ -127,7 +125,10 @@ mod tests {
             let data_returned = download_bytes(
                 DATA_LINK,
                 Some(&DownloadOptions {
-                    portal_url: CUSTOM_PORTAL_URL,
+                    common: CommonOptions {
+                        portal_url: CUSTOM_PORTAL_URL,
+                        ..Default::default()
+                    },
                     ..Default::default()
                 }),
             )

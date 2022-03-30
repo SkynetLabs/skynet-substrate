@@ -1,8 +1,7 @@
 //! Pin functions.
 
-use crate::util::{
-    execute_get, make_url, str_to_bytes, RequestError, DEFAULT_PORTAL_URL, URI_SKYNET_PREFIX,
-};
+use crate::request::{execute_get, CommonOptions, RequestError};
+use crate::util::{make_url, str_to_bytes, URI_SKYNET_PREFIX};
 
 use sp_std::{str, vec::Vec};
 
@@ -32,20 +31,17 @@ impl From<str::Utf8Error> for PinError {
 /// Pin options.
 #[derive(Debug)]
 pub struct PinOptions<'a> {
-    /// The portal URL.
-    pub portal_url: &'a str,
+    /// Common options.
+    pub common: CommonOptions<'a>,
     /// The endpoint to contact.
     pub endpoint_pin: &'a str,
-    /// Optional custom cookie.
-    pub custom_cookie: Option<&'a str>,
 }
 
 impl Default for PinOptions<'_> {
     fn default() -> Self {
         Self {
-            portal_url: DEFAULT_PORTAL_URL,
+            common: Default::default(),
             endpoint_pin: "/skynet/pin",
-            custom_cookie: None,
         }
     }
 }
@@ -62,9 +58,9 @@ pub fn pin_skylink(skylink: &str, opts: Option<&PinOptions>) -> Result<Vec<u8>, 
         skylink
     };
 
-    let url = make_url(&[opts.portal_url, opts.endpoint_pin, skylink]);
+    let url = make_url(&[opts.common.portal_url, opts.endpoint_pin, skylink]);
 
-    let mut response = execute_get(str::from_utf8(&url)?, opts.custom_cookie)?;
+    let mut response = execute_get(str::from_utf8(&url)?, &opts.common)?;
 
     let headers = response.headers();
     let skylink = headers
