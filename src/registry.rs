@@ -392,6 +392,9 @@ pub fn set_entry(
     if let Some(cookie) = opts.common.custom_cookie {
         request = request.add_header("Cookie", cookie);
     }
+    if let Some(key) = opts.common.skynet_api_key {
+        request = request.add_header("Skynet-Api-Key", key);
+    }
 
     // Keeping the offchain worker execution time reasonable, so limiting the call to be within 3s.
     let timeout = offchain::timestamp().add(rt_offchain::Duration::from_millis(3000));

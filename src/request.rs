@@ -11,6 +11,8 @@ pub struct CommonOptions<'a> {
     pub portal_url: &'a str,
     /// Optional custom cookie.
     pub custom_cookie: Option<&'a str>,
+    /// Optional Skynet API key.
+    pub skynet_api_key: Option<&'a str>,
 }
 
 impl Default for CommonOptions<'_> {
@@ -18,6 +20,7 @@ impl Default for CommonOptions<'_> {
         Self {
             portal_url: DEFAULT_PORTAL_URL,
             custom_cookie: None,
+            skynet_api_key: None,
         }
     }
 }
@@ -53,6 +56,9 @@ pub fn add_headers<'a>(
 ) -> http::Request<'a> {
     if let Some(cookie) = common.custom_cookie {
         request = request.add_header("Cookie", cookie);
+    }
+    if let Some(key) = common.skynet_api_key {
+        request = request.add_header("Skynet-Api-Key", key);
     }
 
     request

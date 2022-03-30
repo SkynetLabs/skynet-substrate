@@ -162,6 +162,9 @@ pub fn upload_bytes(
     if let Some(cookie) = opts.common.custom_cookie {
         request = request.add_header("Cookie", cookie);
     }
+    if let Some(key) = opts.common.skynet_api_key {
+        request = request.add_header("Skynet-Api-Key", key);
+    }
 
     // Keeping the offchain worker execution time reasonable, so limiting the call to be within 3s.
     let timeout = offchain::timestamp().add(rt_offchain::Duration::from_millis(opts.timeout));
@@ -208,6 +211,7 @@ mod tests {
     const CONTENT_TYPE_MULTIPART: &str = "multipart/form-data; boundary=\"0000000000000000000000000000000000000000000000000000000000000000----\"";
 
     const JWT_COOKIE: &str = "MTYz...=="; // Don't use a full JWT as it's quite long.
+    const SKYNET_API_KEY: &str = "foo";
 
     // TODO: Add testing option that is pub(crate) and #cfg[test] that allows passing in custom boundary.
     #[test]
@@ -276,7 +280,7 @@ mod tests {
     }
 
     #[test]
-    fn should_upload_with_custom_cookie() {
+    fn should_upload_with_custom_request_options() {
         let (offchain, state) = testing::TestOffchainExt::new();
         let mut t = TestExternalities::default();
         t.register_extension(OffchainWorkerExt::new(offchain));
@@ -289,6 +293,7 @@ mod tests {
             headers: vec![
                 ("Content-Type".to_owned(), CONTENT_TYPE_MULTIPART.to_owned()),
                 ("Cookie".to_owned(), JWT_COOKIE.into()),
+                ("Skynet-Api-Key".to_owned(), SKYNET_API_KEY.into()),
             ],
             response: Some(RESPONSE_JSON.into()),
             sent: true,
@@ -303,6 +308,7 @@ mod tests {
                 Some(&UploadOptions {
                     common: CommonOptions {
                         custom_cookie: Some(JWT_COOKIE),
+                        skynet_api_key: Some(SKYNET_API_KEY),
                         ..Default::default()
                     },
                     ..Default::default()
